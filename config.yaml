@@ -1,0 +1,48 @@
+symbol: BTCUSDT
+timeframes: [1m, 5m, 15m]
+storage:
+  database: runtime/research.sqlite
+  model: runtime/model.joblib
+  report: runtime/report.json
+data:
+  rest_url: https://data-api.binance.vision
+  websocket_url: wss://data-stream.binance.vision:443
+  bootstrap_days: 14
+  warmup_minutes: 120
+  prediction_interval_seconds: 2
+  stale_seconds: 10
+  book_stale_seconds: 5
+  reconnect_max_seconds: 60
+model:
+  type: lightgbm
+  seed: 42
+  min_cycles: 150
+  n_estimators: 100
+  num_leaves: 15
+  learning_rate: 0.04
+  min_child_samples: 60
+  train_fraction: 0.6
+  calibration_fraction: 0.2
+  walk_forward_folds: 3
+entry:
+  up_threshold: 0.70
+  down_threshold: 0.70
+  min_remaining_seconds: 30
+  max_remaining_seconds: 180
+  max_spread_bps: 3
+  min_volatility: 0.00001
+  max_volatility: 0.02
+  trend_deadband: 0.00002
+  momentum_min: 0.0
+  require_book: true
+  # Minute-bar bootstrap has observations at elapsed ~60/120/180/240s.
+  # Continuous probabilities remain visible; entry requires validated time support.
+  support_tolerance_seconds: 4
+paper_trading:
+  enabled: true
+  stake: 1.0
+  net_win_payout: 1.0
+  fee_per_trade: 0.0
+  initial_equity: 100.0
+dashboard:
+  port: 8501

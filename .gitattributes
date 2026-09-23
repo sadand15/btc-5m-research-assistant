@@ -1,0 +1,2 @@
+# Preserve frozen research source bytes, including their original line endings.
+* -text
