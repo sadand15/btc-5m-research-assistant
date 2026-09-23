@@ -25,6 +25,7 @@ def event(c, timestamp):
 
 def setup(tmp_path):
     cfg = load_config()
+    cfg['paper_trading']['execution_mode']='legacy'
     cfg['storage']['database'] = str(tmp_path / 'live.db')
     cfg['entry'].update(require_book=False, min_volatility=0)
     db = Database(cfg['storage']['database'])

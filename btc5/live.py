@@ -8,6 +8,10 @@ from btc5.data import Candle, CandleBook, Historical, OrderBook, MINUTE, CYCLE
 from btc5.features import compute
 from btc5.research import Predictor
 from btc5.strategy import PaperEngine, decide
+from btc5.inference import SingleFlight,recheck
+from btc5.micro import live_micro
+from dataclasses import asdict
+from copy import deepcopy
 
 LOG = logging.getLogger(__name__)
 
@@ -22,6 +26,8 @@ class LiveEngine:
         self.last_prediction = 0
         self.last_repair = 0
         self.last_event = 0
+        self.seconds={}
+        self.flight=SingleFlight(cfg.get('inference',{}).get('timeout_seconds',2))
 
     def now(self):
         return int(time.time() * 1000 + self.offset_ms)
@@ -56,7 +62,7 @@ class LiveEngine:
             self.book.update(c)
         delay = 1.0
         symbol = self.cfg['symbol'].lower()
-        url = self.cfg['data']['websocket_url'].rstrip('/') + f'/stream?streams={symbol}@kline_1m/{symbol}@depth20@100ms'
+        url = self.cfg['data']['websocket_url'].rstrip('/') + f'/stream?streams={symbol}@kline_1m/{symbol}@depth20@100ms/{symbol}@kline_1s'
         while True:
             try:
                 self.db.state(connection='SYNCING', heartbeat=self.now())
@@ -80,15 +86,24 @@ class LiveEngine:
                         if 'lastUpdateId' in data:
                             self.depth.update(data, self.now())
                         elif 'kline' in stream or data.get('e') == 'kline':
-                            self.handle_kline(data)
+                            if data['k'].get('i')=='1s':
+                                k=data['k']
+                                if k['x']:
+                                    t=int(k['t'])
+                                    self.seconds[t]={'timestamp':t,'close':float(k['c']),'volume':float(k['v']),'buy_volume':float(k['V'])}
+                                    self.seconds={t:r for t,r in self.seconds.items() if t>=int(k['t'])-120000}
+                            else:
+                                self.handle_kline(data)
                         if self.now() - self.last_repair > MINUTE:
                             await self.repair()
                         if self.last_event and self.now() - self.last_event > self.cfg['data']['stale_seconds'] * 1000:
                             raise ConnectionError('Price stream stale despite other stream activity')
             except asyncio.CancelledError:
+                self.flight.close()
                 self.db.state(connection='STOPPED', heartbeat=self.now())
                 raise
             except Exception as exc:
+                self.last_event=0
                 LOG.exception('[DATA] disconnected; reconnecting in %.1fs: %s', delay, exc)
                 self.db.state(connection='DISCONNECTED', error=str(exc), heartbeat=self.now(), decision='WAIT', reason='STALE_DATA')
                 await asyncio.sleep(delay + random.random())
@@ -129,27 +144,69 @@ class LiveEngine:
         try:
             history = sorted(self.book.minutes.values(), key=lambda x: x.timestamp)
             features = compute(history, c, asof, opening.open)
-            probability = self.predictor.predict(features, c.close, asof)
+            try:features.update(live_micro(list(self.seconds.values()),asof))
+            except ValueError:pass
         except ValueError as exc:
             self.db.state(decision='WAIT', reason=str(exc), heartbeat=now)
             LOG.warning('[FEATURE] %s', exc)
             return
+        snapshot=deepcopy(features)
+        input_market={'current':asdict(c),'cycle_open':opening.open,'event_time':event,
+                      'book':deepcopy(self.depth.values),'book_at':self.depth.received_at}
+        def work():
+            if hasattr(self.predictor,'predict_all'):return self.predictor.predict_all(snapshot,c.close,asof)
+            return self.predictor.predict(snapshot,c.close,asof),{}
+        def failed(reason):
+            self.db.state(decision='NO TRADE',reason=reason,heartbeat=self.now())
+            self.db.audit(self.now(),cycle,'inference_failed',{'reason':reason,'feature_at':asof,
+                'features':snapshot,'market':input_market,'model_version':self.predictor.version})
+        def completed(result):
+            probability,outputs=result
+            self.finish_prediction(c,event,asof,cycle,snapshot,probability,outputs,input_market)
+        try:asyncio.get_running_loop()
+        except RuntimeError:
+            # Synchronous adapter retained for offline replay/unit tests.
+            try:completed(work())
+            except ValueError as exc:failed(str(exc))
+        else:
+            if not self.flight.submit(work,completed,failed):
+                self.db.state(inference_skipped=self.flight.skipped)
+        self.book.prune(c.timestamp - self.cfg['data']['warmup_minutes'] * MINUTE)
+
+    def finish_prediction(self,c,event,asof,cycle,features,probability,outputs,input_market):
+        now=self.now()
+        times={'btc':self.last_event,'orderbook':self.depth.received_at,
+               'trade_flow':max(self.seconds,default=-999)+999}
+        error=recheck(cycle,asof,now,times,self.cfg)
+        fresh=error is None
+        latest=self.book.minutes.get(now//MINUTE*MINUTE)
+        latest_price=latest.close if latest else c.close
+        if abs(latest_price/c.close-1)*10000>self.cfg.get('inference',{}).get('max_price_move_bps',10):
+            fresh=False;error='PRICE_CHANGED_DURING_INFERENCE'
         support = self.predictor.supported(features['elapsed_seconds'], self.cfg['entry']['support_tolerance_seconds'])
         depth = self.depth.values if now - self.depth.received_at <= self.cfg['data']['book_stale_seconds'] * 1000 else None
         side, reason = decide(probability, features, depth, self.cfg, support, fresh)
+        if error:reason=error
         # Save the observed book with each signal without pretending it was in training.
-        snapshot = {**features, 'orderbook': depth}
+        snapshot = {**features, 'orderbook': depth,'freshness_at':times}
         entered = self.paper.enter(asof, cycle, side, c.close,
                                    probability if side == 'UP' else 1 - probability, snapshot, self.predictor.version)
         decision = f'SIM BUY {side}' if entered else 'WAIT'
         if side != 'WAIT' and not entered:
-            reason = 'ALREADY_ENTERED_OR_DISABLED'
-        self.db.prediction(asof, cycle, c.close, probability, snapshot, self.predictor.version, decision, reason, support)
+            if self.cfg['paper_trading'].get('execution_mode')=='predictfun':
+                decision,reason=f'CANDIDATE {side}','AWAIT_VENUE_QUOTE_AND_EXECUTION'
+            else:
+                reason = 'ALREADY_ENTERED_OR_DISABLED'
+        self.db.prediction(asof, cycle, c.close, probability, snapshot, self.predictor.version, decision, reason, support,available_at=int(time.time()*1000))
         self.db.state(connection='CONNECTED', heartbeat=now, event_time=event, price=c.close,
-            cycle_id=cycle, cycle_open=opening.open, features=features, orderbook=depth,
+            cycle_id=cycle, cycle_open=input_market['cycle_open'], features=features, orderbook=depth,
             up_probability=probability, model_version=self.predictor.version,
-            supported=support, decision=decision, reason=reason)
+            supported=support, decision=decision, reason=reason,model_outputs=outputs,
+            freshness={k:now-v for k,v in times.items()},data_mode='LIVE BTC',
+            inference_latency_ms=now-asof)
+        self.db.audit(now,cycle,'prediction',{'feature_at':asof,'model_version':self.predictor.version,
+            'features':features,'market_before':input_market,'market_after':{'price':latest_price,'timestamps':times,'book':depth},
+            'outputs':outputs,'probability':probability,'decision':decision,'reason':reason})
         LOG.info('[FEATURE] updated | [MODEL] UP %.3f DOWN %.3f | [ENTRY] %s %s', probability, 1-probability, decision, reason)
         if entered:
             LOG.info('[TRADE] %s cycle=%s', decision, cycle)
-        self.book.prune(c.timestamp - self.cfg['data']['warmup_minutes'] * MINUTE)

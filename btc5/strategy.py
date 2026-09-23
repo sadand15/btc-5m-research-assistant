@@ -45,6 +45,8 @@ class PaperEngine:
     def enter(self, timestamp: int, cycle: int, side: str, price: float, probability: float,
               features: dict, version: str) -> bool:
         p = self.cfg['paper_trading']
+        if p.get('execution_mode','legacy') != 'legacy':
+            return False
         if not p['enabled'] or side not in ('UP', 'DOWN') or not cycle <= timestamp < cycle + CYCLE:
             return False
         if self.db.conn.execute('SELECT 1 FROM outcomes WHERE cycle_id=?', (cycle,)).fetchone():

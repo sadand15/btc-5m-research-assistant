@@ -121,7 +121,7 @@ def backtest(frame: pd.DataFrame, probabilities: np.ndarray, cfg: dict) -> dict:
                         'win_rate': sum(t['result'] == 'WIN' for t in resolved) / len(resolved) if resolved else None,
                         'pnl': sum(t['pnl'] for t in ts)})
         return out
-    return {'scope': 'OHLCV-only minute-close replay; orderbook/spread filters NOT evaluated',
+    return {'scope': frame.attrs.get('source', 'OHLCV-only minute-close replay') + '; historical orderbook/spread filters NOT evaluated',
             'pnl_unit': 'hypothetical fixed-stake binary units, not BTC/USDT execution profit',
             'total_trades': len(trades), 'wins': wins, 'losses': losses,
             'voids': len(trades) - wins - losses, 'win_rate': wins / (wins + losses) if wins + losses else None,
@@ -166,14 +166,15 @@ def train(frame: pd.DataFrame, cfg: dict) -> dict:
     columns = sorted(set(frame.columns) - META)
     if not np.isfinite(frame[columns].to_numpy(dtype=float)).all():
         raise ValueError('NaN/Inf model input')
-    report = {'schema': FEATURE_SCHEMA, 'data_source': 'Binance public finalized 1m OHLCV',
+    report = {'schema': FEATURE_SCHEMA, 'data_source': frame.attrs.get('source', 'Binance public finalized 1m OHLCV'),
+              'sample_seconds': frame.attrs.get('sample_seconds', 60),
               'target': 'P(cycle_close > cycle_open); complement includes ties',
               'ties': int(frame[frame.outcome == 'TIE'].cycle_id.nunique()),
               'split': {name: {'cycles': int(part.cycle_id.nunique()), 'samples': len(part),
                                'first_cycle': int(part.cycle_id.min()), 'last_cycle': int(part.cycle_id.max())}
                         for name, part in [('train', tr), ('calibration', ca), ('test', te)]},
               'models': {}, 'config': cfg,
-              'limitations': ['Minute close samples only; no historical intraminute interpolation.',
+              'limitations': ['Temporal support is limited to recorded sampling grid; no intraminute interpolation.',
                               'DOWN probability means non-UP; ties void paper positions.',
                               'Repeated samples within a cycle are correlated; sample count is not independent cycle count.',
                               'Feature importance is exploratory, not a feature selection result.',
@@ -193,7 +194,8 @@ def train(frame: pd.DataFrame, cfg: dict) -> dict:
         if kind == cfg['model']['type']:
             selected = (calibrated, cols)
             # Permute only on test; do not feed this ranking back into fitting.
-            importance = permutation_importance(calibrated, te[cols], te.label,
+            imp_rows = np.linspace(0, len(te)-1, min(len(te), 5000), dtype=int)
+            importance = permutation_importance(calibrated, te.iloc[imp_rows][cols], te.iloc[imp_rows].label,
                 n_repeats=3, random_state=cfg['model']['seed'], scoring='neg_brier_score', n_jobs=1)
             report['feature_importance'] = sorted(
                 [{'feature': col, 'brier_increase': float(mean), 'std': float(std)}
@@ -221,6 +223,7 @@ def train(frame: pd.DataFrame, cfg: dict) -> dict:
     artifact = {'model': selected[0], 'columns': selected[1], 'version': version,
                 'schema': FEATURE_SCHEMA, 'symbol': cfg['symbol'], 'fit_end': int(ca.cycle_id.max()) + CYCLE,
                 'elapsed_support': sorted(frame.elapsed_seconds.round(3).unique().tolist()),
+                'data_source': report['data_source'], 'sample_seconds': report['sample_seconds'],
                 'fingerprint': fingerprint, 'config': cfg}
     path = Path(cfg['storage']['model'])
     temp = path.with_suffix('.tmp')
@@ -261,3 +264,14 @@ class Predictor:
         # Only approach a trained minute close from the left. Just AFTER a boundary
         # has a new partial candle/volume and is a different input distribution.
         return any(0 <= t - elapsed <= tolerance for t in self.artifact['elapsed_support'])
+
+    def predict_all(self,features,price,timestamp):
+        main=self.predict(features,price,timestamp)
+        row=model_features(features,price)
+        results={'naive':{'direction':'UP' if features['distance_absolute']>0 else 'DOWN','probability':None}}
+        for name,item in self.artifact.get('bundle',{}).items():
+            values=pd.DataFrame([row],columns=item['columns'])
+            if not np.isfinite(values.to_numpy(dtype=float)).all():
+                results[name]={'probability':None,'reason':'MISSING_MICRO_FEATURES'};continue
+            results[name]={'probability':float(item['model'].predict_proba(values)[:,1][0])}
+        return main,results

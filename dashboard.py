@@ -15,6 +15,7 @@ cfg = load_config(args.config)
 st.set_page_config(page_title='BTC 5M Research', page_icon='₿', layout='wide')
 st.title('BTC 5M · 实时交易研究助手')
 st.caption('PAPER TRADING ONLY · UTC 对齐周期 · 实际模型输出 · 本机 SQLite')
+st.caption('手机白屏可改用相同电脑 IP 的 8502 端口：轻量 HTML 页，不依赖 WebSocket。')
 
 
 @st.fragment(run_every='2s')
@@ -42,6 +43,10 @@ def render():
         st.info('训练和行情日志见终端；首次启动需要下载、构建特征及校准。')
         return
     f, price, opening = state['features'], state['price'], state['cycle_open']
+    quote_live=state.get('venue_status')=='CONNECTED' and now-state.get('venue_quote',{}).get('received_at',0)<=cfg['predictfun']['max_quote_age_ms']
+    st.warning('报价模式：'+('LIVE DATA（只读盘口 / 模拟成交）' if quote_live else 'DISABLED（无可用实时预测市场报价）'))
+    st.caption('BTC 数据：'+('STALE DATA' if stale else 'LIVE DATA')+' · 离线研究：REPLAY DATA · Mock 成交：SIMULATED DATA')
+    st.info('predict.fun: '+state.get('venue_status','等待接口初始化')+' · '+state.get('venue_decision','WAIT'))
     elapsed = max(0, min(300, (now - state['cycle_id']) / 1000))
     remaining = 300 - elapsed
     columns = st.columns(6)
@@ -69,7 +74,7 @@ def render():
         st.caption('DOWN 为 UP 的补事件（包含持平）；模拟交易持平作废。')
         st.subheader('WAIT' if stale else state.get('decision', 'WAIT'))
         st.write('STALE_DATA' if stale else state.get('reason', ''))
-        st.caption('分钟历史校准支持范围内' if state.get('supported') else '当前秒位未被分钟历史验证；概率仅供观察，禁止模拟入场')
+        st.caption('当前位于模型训练采样点附近' if state.get('supported') else '当前秒位不在模型时间支持范围；概率仅供观察')
     tabs = st.tabs(['趋势与特征', '预测与模拟交易', '校准与回测'])
     with tabs[0]:
         st.dataframe(pd.DataFrame([{'周期': t, 'trend return': f[f'trend_{t}'],
@@ -81,16 +86,24 @@ def render():
         else:
             b.info('订单簿缺失或过期。')
     with tabs[1]:
+        if state.get('model_outputs'):
+            st.subheader('模型对照')
+            st.dataframe(pd.DataFrame([{'model':k,'UP probability':v.get('probability'),
+                'DOWN probability':1-v['probability'] if v.get('probability') is not None else None,
+                'direction / reason':v.get('direction',v.get('reason',''))} for k,v in state['model_outputs'].items()]),hide_index=True)
         st.subheader('Recent Predictions')
         st.dataframe(predictions.drop(columns=['features'], errors='ignore'), hide_index=True)
         st.subheader('Recent Simulated Trades')
         st.dataframe(trades.drop(columns=['features'], errors='ignore'), hide_index=True)
         st.download_button('导出可见交易 CSV', trades.to_csv(index=False).encode('utf-8-sig'), 'recent_trades.csv', 'text/csv')
     with tabs[2]:
+        from btc5.research_ui import render_report
+        render_report()
         report_path = Path(cfg['storage']['report'])
         if report_path.exists():
             report = json.loads(report_path.read_text(encoding='utf-8'))
-            st.caption('时间顺序独立测试集；OHLCV 回放不包含历史订单簿过滤。高胜率可能来自已发生的周期位移，须与 distance_time 基线比较。')
+            if report.get('schema')=='v2-review-1':return
+            st.caption('时间顺序独立测试集；'+report.get('data_source','')+'。行情回放不等于真实合约成交，高胜率须与 distance_time 基线比较。')
             st.dataframe(pd.DataFrame([{'model': name, **{k: m[k] for k in ['samples', 'accuracy', 'precision', 'recall', 'f1', 'brier_score', 'uncalibrated_brier']}}
                                       for name, m in report['models'].items()]), hide_index=True)
             selected = st.selectbox('查看模型', list(report['models']), index=list(report['models']).index(cfg['model']['type']))

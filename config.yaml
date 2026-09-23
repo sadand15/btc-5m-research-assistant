@@ -2,14 +2,17 @@ symbol: BTCUSDT
 timeframes: [1m, 5m, 15m]
 storage:
   database: runtime/research.sqlite
-  model: runtime/model.joblib
-  report: runtime/report.json
+  model: runtime/v2/seconds/model.joblib
+  report: runtime/v2/seconds/report.json
 data:
   rest_url: https://data-api.binance.vision
   websocket_url: wss://data-stream.binance.vision:443
   bootstrap_days: 14
+  research_version: 2
+  bootstrap_resolution: 1s
+  bootstrap_sample_seconds: 5
   warmup_minutes: 120
-  prediction_interval_seconds: 2
+  prediction_interval_seconds: 5
   stale_seconds: 10
   book_stale_seconds: 5
   reconnect_max_seconds: 60
@@ -35,14 +38,53 @@ entry:
   trend_deadband: 0.00002
   momentum_min: 0.0
   require_book: true
-  # Minute-bar bootstrap has observations at elapsed ~60/120/180/240s.
-  # Continuous probabilities remain visible; entry requires validated time support.
+  # Deployed model uses real 1s archives with a 5s sampling grid.
   support_tolerance_seconds: 4
 paper_trading:
   enabled: true
+  execution_mode: predictfun
   stake: 1.0
   net_win_payout: 1.0
   fee_per_trade: 0.0
   initial_equity: 100.0
 dashboard:
+  host: 0.0.0.0
   port: 8501
+  mobile_port: 8502
+predictfun:
+  enabled: true
+  api_key_env: PREDICTFUN_API_KEY
+  discovery_pages: 3
+  up_index_set: null
+  poll_seconds: 2
+  budget_usdt: 10.0
+  min_fill_usdt: 1.0
+  min_expected_edge_usdt: 0.10
+  latency_ms: 500
+  max_quote_age_ms: 5000
+  max_slippage_bps: 100
+  fee_discount_multiplier: 1.0
+  # Deduction denomination is a simulation assumption, auditable per fill.
+  fee_deduction: shares
+  # Binance probabilities are not automatically valid for another oracle.
+  allow_basis_risk: false
+  max_open_basis_bps: 0.0
+  max_prediction_spread: 0.06
+  max_prediction_spread_pct: 0.25
+  slippage_model: fixed
+  fixed_slippage_bps: 0
+  volatility_slippage_multiplier: 1.0
+freshness:
+  btc_price_max_age_ms: 10000
+  orderbook_max_age_ms: 5000
+  trade_flow_max_age_ms: 5000
+  quote_max_age_ms: 5000
+  model_input_max_age_ms: 10000
+  require_trade_flow: false
+inference:
+  timeout_seconds: 2
+  max_price_move_bps: 10
+simulation:
+  mock_spread: 0.02
+  mock_fee_bps: 200
+  mock_depth_shares: 200

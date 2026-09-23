@@ -127,6 +127,8 @@ class OrderBook:
             return False
         values = {'bid': bid, 'ask': ask, 'spread': ask - bid,
                   'spread_bps': (ask - bid) / ((ask + bid) / 2) * 10000}
+        bid_size,ask_size=float(bids[0][1]),float(asks[0][1])
+        values['microprice']=(ask*bid_size+bid*ask_size)/(bid_size+ask_size) if bid_size+ask_size else (bid+ask)/2
         for n in (5, 10):
             bv, av = sum(float(r[1]) for r in bids[:n]), sum(float(r[1]) for r in asks[:n])
             values.update({f'bid_volume_{n}': bv, f'ask_volume_{n}': av,

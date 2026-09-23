@@ -1,104 +1,123 @@
-# BTC 5 分钟实时交易研究助手
+# BTC 5M Research Assistant
 
-Python 3.11+，公开 Binance BTCUSDT 行情，**PAPER TRADING ONLY**。实现行情、周期聚合、因果特征、LightGBM/Logistic 概率、独立校准、模拟交易、SQLite、时间顺序回测和 Streamlit。无需 API Key，代码中没有真实下单接口。
+## Overview
 
-本机首轮实测、模型比较和明确能力边界见 **[FIRST_RUN.md](FIRST_RUN.md)**。如需复现已验证的依赖组合，使用 `pip install -r requirements.lock.txt`；该锁文件记录本机 Python 3.12 环境。
+**RESEARCH / PAPER TRADING ONLY.** BTC 五分钟方向概率研究助手，支持实时市场监控、historical replay、walk-forward validation、probability calibration 和 paper execution。不包含真实资金自动交易、钱包签名或真实订单提交。
 
-## 快速运行
+## Current Version
 
-Windows PowerShell，进入本目录：
+**V2** — `main` 对应 `v2.0.0`；`v1.0.0` 保留第一版可恢复源码。模型、特征、calibration 和 threshold 在本次发布整理中保持不变。
+
+## Version History
+
+### V1.0.0
+
+- distance_time、Logistic Regression、LightGBM。
+- 基础 BTC 5m prediction、概率 calibration、初步 paper trading。
+- Binance 历史与实时数据、SQLite 记录、Streamlit。
+
+首轮 LightGBM 测试 Accuracy 约 74.78%，测试集 3,212 个快照、803 个周期；后续审计同样本 Naive 约 74.63%。这是方向分类结果，不能解释为交易收益或独立交易胜率。见 [V1 Review](docs/V1_REVIEW.md)。
+
+### V2.0.0
+
+- cycle leakage audit、naive baseline、真实秒级数据的 5-second replay。
+- walk-forward validation、regime analysis、confidence / coverage analysis。
+- probability calibration、short-term micro features。
+- single-flight inference、stale-data protection、post-inference market re-check。
+- MarketDataProvider、live read-only quote recording、replay/mock quotes。
+- fee/spread/slippage/latency simulation、audit trail。
+- Streamlit dashboard、轻量手机网页、forward blind observation。
+
+详见 [CHANGELOG](CHANGELOG.md)、[V2 Review](docs/V2_REVIEW.md) 和 [架构](docs/ARCHITECTURE.md)。
+
+## Important Research Result
+
+目前复杂 ML 模型的方向 Accuracy **没有明显超过 simple current-side / naive baseline**。14 天秒级研究中 Naive 73.7362%，LightGBM 73.7782%；90 天研究中 Naive 74.4985%，LightGBM 74.3827%。不同研究样本粒度不同，不能直接横向解释成提升。
+
+模型目前更值得研究的是 **probability estimation**，而非声称存在稳定交易 alpha。历史日期此前已经被查看，不属于新的前瞻盲测；置信度快照不能当作独立交易胜率。模型目标为 Binance proxy，Predict.fun 的 Chainlink BTC/USDT Top-of-Book 结算目标不同。保持跨价格源保护，未验证真实成交的收益不作盈利证据。
+
+## Installation
+
+Windows，Python 3.12（项目要求 3.11+），PowerShell：
 
 ```powershell
+git clone https://github.com/sadand15/btc-5m-research-assistant.git
+cd btc-5m-research-assistant
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe app.py
 ```
 
-本机已创建 `.venv` 时直接运行最后一行，或 `powershell -ExecutionPolicy Bypass -File .\start.ps1`。
-通用环境可使用 `pip install -r requirements.txt`、`python app.py`。
+Private 仓库需要已有 GitHub 访问权限。`requirements.lock.txt` 保存原运行环境的完整版本快照；一般安装和 CI 使用 `requirements.txt`。模型与大数据不随 Git 下载；首次启动会下载数据并训练，耗时取决于网络与电脑。
 
-首次无模型时，自动下载最近 14 天已结束 1m K 线，构造训练样本，按时间训练、校准、测试并保存模型，然后启动 WebSocket 和本地页面：**http://localhost:8501**。首次特征生成需要几分钟。已有模型时直接启动，不会悄悄用新测试集重新训练。Ctrl+C 停止行情与其启动的页面进程。不要在同一数据库上同时启动多个行情进程。
+## Running
+
+以下 research 命令用于新克隆或独立实验目录，**不要覆盖当前冻结部署**。
 
 ```powershell
-# 分阶段运行；下载增加数据，按 timestamp 去重
-.\.venv\Scripts\python.exe app.py download --days 30
-.\.venv\Scripts\python.exe app.py train
-.\.venv\Scripts\python.exe app.py backtest
-# 无界面 / 有限时间联调
-.\.venv\Scripts\python.exe app.py --no-dashboard --seconds 60
-# 单独启动只读界面
-.\.venv\Scripts\python.exe -m streamlit run dashboard.py --server.address 127.0.0.1
-# 测试
+# Research: fixed historical windows, then V2 experiments
+.\.venv\Scripts\python.exe research.py seconds --days 14 --step 5 --end 2026-09-22
+.\.venv\Scripts\python.exe research.py regimes --days 90 --end 2026-09-22
+.\.venv\Scripts\python.exe v2.py research
+
+# Paper: mock execution scenarios; recorded CSV/JSON via --quotes
+.\.venv\Scripts\python.exe v2.py paper
+
+# Live read-only monitoring, paper engine and dashboards
+.\.venv\Scripts\python.exe app.py
+
+# Dashboard only, using existing local runtime data
+.\.venv\Scripts\python.exe -m streamlit run dashboard.py --server.address=127.0.0.1
+
+# Tests: no live key required
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-`--config path/to/config.yaml` 适用于全部 CLI 命令；界面自定义配置：`streamlit run dashboard.py -- --config path/to/config.yaml`。文件路径相对配置文件解析。`config.yaml` 包含概率阈值、时间窗口、波动/趋势/价差过滤、采样间隔、假设赔率和模型参数。
+完整页面：[localhost:8501](http://localhost:8501/)。`app.py` 同时提供手机轻量页面：[localhost:8502](http://localhost:8502/)。iPhone/iPad 与电脑连接同一 Wi-Fi 后，访问 `http://<电脑局域网IPv4>:8502/`；电脑须开机，防火墙允许私有网络访问。手机上的 localhost 指手机本身。当前默认绑定 `0.0.0.0` 供局域网使用，页面无身份认证，不应直接暴露到公网。
 
-## 预测的确切含义
+## Environment Variables
 
-预测 **当前 UTC 对齐五分钟周期的收盘价是否高于该周期的开盘价**，不是从当前时刻再向后滚动五分钟。当前周期从 `floor(exchange_timestamp / 300000) * 300000` 开始；结算价来自该周期五根完整 1m K 线的最后收盘价。开盘必须来自周期第一根 1m K 线，不用程序启动价格替代。
+`PREDICTFUN_API_KEY`：Predict.fun 只读行情 Key，由运行进程环境提供。`.env.example` 只有空变量模板；程序**不自动加载 .env**。在本机安全设置环境变量后启动进程，不把值写入源码、配置、日志、数据库或提交。没有 Key 时行情服务等待，不伪造真实报价；离线测试不需要 Key。
 
-严格事件：`UP = close > open`；模型补概率 `1-P(UP)` 包含 `close <= open`。页面将第二项标注为 DOWN / non-UP。价格相等在方向标签中属于 non-UP，但模拟交易双方均 **VOID**，退还本金，仅扣配置手续费。数据库保留 TIE，而不是把持平谎记为下跌获胜。
+## Project Structure
 
-## 数据与时间正确性
+| 路径 | 用途 |
+|---|---|
+| `btc5/` | 行情、特征、研究、推理、模拟执行、前瞻观察 |
+| `app.py`, `dashboard.py`, `mobile.py` | 启动入口与两种界面 |
+| `research.py`, `v2.py`, `evaluate.py` | 历史研究、V2 实验、评估 |
+| `venue.py`, `forward.py` | 行情录制/回放与前瞻报告 CLI |
+| `config.yaml` | 无凭证的研究配置 |
+| `tests/` | 离线自动化测试 |
+| `scripts/` | 审计、报告、凭证扫描与发布元数据 |
+| `docs/` | 历史 Review、冻结方案、模型身份、架构与版本来源 |
+| `data/README.md` | 数据来源和重新生成方式 |
+| `runtime/` | 本地数据、模型、日志、数据库，全部忽略 |
 
-- 使用官方 market-data-only REST 和 WebSocket 域名，只订阅 `kline_1m`、`depth20@100ms`。K 线流约两秒更新，模型默认每两秒更新一次；不宣称逐笔成交延迟。5m/15m 从同一基础流聚合，不重复订阅。
-- 订单簿用完整 top-20 快照，以 update ID 去重，计算 top-5/top-10 数量、价差和 OBI。不是误用 diff-depth 增量的伪订单簿。
-- 同分钟快照替换，成交量不累加重复消息；已结束 K 线不被未结束快照覆盖；先检查连续性再聚合。缺口不会前向填充，也不会静默当作零波动。
-- 启动、重连和每分钟通过 REST 修复；断线指数退避，自动响应 WebSocket ping/pong；过期行情停止入场，页面显示 STALE。服务器时间估计本机时钟偏移，周期基于交易所事件时间。
-- 缺失结算数据的交易保持 PENDING；恢复后用完整五分钟 K 线结算。SQLite 唯一周期约束和事务保证重启后不重复交易、不重复结算。
-- 技术指标用最近 90 根完整 1m K 线；当前价格、当前分钟累计量、开盘距离、剩余秒数使用当时快照。VWAP 是滚动 20 根 1m 典型价格加权值；RV 是完整分钟对数收益平方和的平方根；`sigma_5m_price = cycle_open * std(last30 minute log returns) * sqrt(5)`；Z 无量纲。1m RV 为上一根完整分钟绝对对数收益，不是逐笔实现波动率。
-- 15m 趋势来自相邻两根完整、UTC 对齐 15m K 线的收盘收益；1m/5m momentum 参与入场确认。订单簿只做实时辅助/价差过滤，未被假装成已有历史训练特征。
+## Testing
 
-## 历史数据能力边界：不要把分钟数据冒充秒级数据
-
-第一版下载 1m 历史并聚合 5m/15m，样本位于每轮已过去 **60、120、180、240 秒**（最后一根毫秒时间戳近似为整秒）。第五分钟收盘已经揭晓答案，绝不作为待预测样本。历史特征调用与实时相同的函数，不插值生成虚假的秒线或订单簿。
-
-模型持续显示概率，但首轮校准证据只覆盖上述分钟收盘附近。默认仅在这些时间点**之前四秒内**允许入场，其他秒位显示 `OUTSIDE_CALIBRATION_TIME_SUPPORT`。分钟刚开始的快照不因接近上一个分钟收盘而获得支持。这保证仍然持续监测，而不把未经验证的秒位当成已校准结果。放宽配置容差属于新的研究假设，需后续秒级历史或实盘采样验证。
-
-实时 `predictions.features` 保存每次特征与当时订单簿，`outcomes` 保存真实周期结果，可按 cycle_id 连接开展未来秒级训练；**第一版尚不提供录制样本自动再训练，也不提供历史深度回放**。
-
-## 训练、校准、回测
-
-按完整 cycle_id 排序分组：最早 60% 训练，中间 20% sigmoid 校准，最后 20% 测试，无 shuffle、同周期不跨分区。校准用冻结的已拟合模型，校准集不参与基础模型训练。三种模型都报告独立测试结果：
-
-1. `distance_time`：只使用领先幅度和剩余时间的 Logistic 基线。
-2. `logistic`：标准化后的全特征 Logistic Regression。
-3. `lightgbm`：预设小树模型，默认实时使用该模型，不按测试表现自动挑选。
-
-还报告训练上涨先验、当前价格所在开盘方向的固定置信度参照，以及扩展窗口 walk-forward（重新训练和重新校准）。报告 accuracy、precision、recall、F1、Brier、log loss、校准桶、时间/概率分组、置换重要性。高于常数先验并不意味着技术指标有效，应同时比较 distance_time，且后者已使用周期内实际发生的价格运动。
-
-`app.py backtest` 拒绝使用模型校准截止之前的样本，只回放保留测试期和更晚的数据。每轮至多一笔，允许 NO TRADE，统计胜负、持平、最大回撤、profit factor、按入场置信度和剩余时间分组。空交易桶为 null，不捏造零样本胜率；profit factor 无损失分母时为 null。
-
-**OHLCV 回测显式跳过订单簿/价差过滤，因此不等同完整实时策略回放。** 历史 minute-close 采用理想观察时刻，未模拟网络延迟。盈亏为固定 stake 的假设二元合约单位（默认赢 +1、输 -1），不是 BTC 现货做多做空收益，也不是任何预测市场的可执行收益。赔率、手续费、初始权益均可配置，无真实买卖价或实际成交模型。
-
-重要性只作测试集上的探索性排名，不反馈筛选特征；没有调参寻优。周期内四个样本相关，不能把样本数当作独立观察数。当前报告不含块 bootstrap 置信区间；短历史胜率不能证明持久信号。
-
-## 项目结构与持久化
-
-```text
-app.py                 下载/训练/回测/实时统一入口与页面生命周期
-dashboard.py           Streamlit，只读数据库，图表/倒计时/校准
-config.yaml            所有交易阈值及运行参数
-btc5/config.py         配置与校验
-btc5/data.py           Candle、聚合、历史 REST、订单簿
-btc5/features.py       共享的因果特征实现
-btc5/database.py       SQLite WAL、幂等写入
-btc5/research.py       数据集、三种模型、校准、walk-forward、回测
-btc5/strategy.py       独立 Entry Engine、Paper Engine
-btc5/live.py           WebSocket、补缺、实时推断调度
-tests/test_core.py     数据完整性、泄漏、时间切分、结算测试
-runtime/               本机生成，gitignore
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe scripts/security_scan.py index
+.\.venv\Scripts\python.exe scripts/security_scan.py history
 ```
 
-`runtime/research.sqlite`：candles、predictions、trades、outcomes、state。
-`runtime/model.joblib`：模型、特征列、模式版本、数据指纹、训练配置、校准截止时间。
-`runtime/report.json`：完整研究报告；`heldout_samples.csv`、`backtest_trades.csv`：可审查测试数据/交易；`backtest.json`：独立回测结果；`research.log`：轮转日志。
+V1 恢复版本有 16 项测试；V2 原有 52 项测试。测试使用本地样本、临时数据库和 mock，不调用真实行情接口。GitHub Actions 在 Python 3.12 的 Windows/Linux 上安装依赖并运行 pytest 和历史凭证扫描，不设置真实 API Key。
 
-## 运行故障与后续方向
+## Data
 
-网络无法访问 Binance 时会记录错误并重试，不自动切换为虚构数据。如果首次下载失败，修复网络后重新运行；历史和模型不会假装已经可用。终端只认不到 python 时可直接使用上面的 `.venv\Scripts\python.exe`。页面端口已占用时修改 config 的 dashboard.port，或单独启动页面。
+Git 不保存 `.env`、运行 SQLite、完整 observations、历史 parquet/CSV、行情 ZIP、日志、缓存、venv 或模型二进制。必要的小型 Markdown 报告与公开冻结哈希保留。未全局忽略 `.json` / `.csv` / `.parquet`；大型自动生成文件归于 `runtime/`。详见 [数据与复现](data/README.md)。
 
-后续优先级：① 加入真实 1s/逐笔历史和订单簿录制重放，覆盖所有剩余秒位并统一历史/实时策略；② 延长历史、按市场状态做滚动测试及周期块 bootstrap，比较 distance/time 基线与技术指标增量；③ 接入只读二元市场报价，按可成交赔率、价差与费用计算期望收益，保留纯模拟执行。
+## Forward Blind Test
 
-API / 校准依据：[Binance public market data](https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md)、[WebSocket streams](https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md)、[scikit-learn probability calibration](https://scikit-learn.org/stable/modules/calibration.html)。
+当前模型已冻结，正在进行前瞻 observation。预先固定窗口为 **2026-09-23 12:15 至 2026-09-30 12:15（北京时间）**，研究 ID `forward-1790136900000`，计划 2,016 个周期。此处记录启动时的方案，窗口结束或后续结果不会用于改写过去说明。
+
+模型 `v2-9e452c59ebf7`，SHA256 `5b4a46e5394c095848cc3191b9f1f8cb4de7366fc1ed496c88baf0561ce6749f`。主分析取每周期剩余 115–120 秒内第一次有效联合快照；缺失、未结算、50/50 单列，不补造数据。见 [冻结方案](docs/FORWARD_TEST_PROTOCOL.md) 和 [公开哈希记录](docs/FROZEN_MODEL.json)。
+
+```powershell
+.\.venv\Scripts\python.exe forward.py report
+# Release registration on the original frozen observation host, after tagging
+.\.venv\Scripts\python.exe scripts/register_release.py --version v2.0.0
+git rev-parse 'v2.0.0^{commit}'
+```
+
+`forward_release_provenance` 表和 `runtime/forward/release.json` 记录 Git SHA、版本、模型及配置哈希，并通过 `run_id` 关联观测。注册时校验提交中的源码与原冻结哈希完全一致，不改模型、原 manifest 或观测行。该元数据是发布时对既有冻结研究的核验归属。七天观察首先验证管线与目标差异，不证明稳定盈利。

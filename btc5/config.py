@@ -26,4 +26,23 @@ def load_config(path: str | Path = ROOT / 'config.yaml') -> dict:
         raise ValueError('Thresholds must be in [0.5, 1]')
     if p['stake'] <= 0 or p['net_win_payout'] < 0 or p['fee_per_trade'] < 0 or p['initial_equity'] <= 0:
         raise ValueError('Invalid hypothetical payoff')
+    v=cfg.get('predictfun')
+    if cfg.get('freshness'):
+        import math
+        for key,value in cfg['freshness'].items():
+            if key!='require_trade_flow' and (not math.isfinite(value) or value<=0):
+                raise ValueError('Invalid freshness limit: '+key)
+        if v:v['max_quote_age_ms']=cfg['freshness']['quote_max_age_ms']
+    if cfg.get('inference',{}).get('timeout_seconds',2)<=0:
+        raise ValueError('Inference timeout must be positive')
+    if v:
+        import math
+        for key in ('budget_usdt','min_fill_usdt','min_expected_edge_usdt','latency_ms','max_quote_age_ms',
+                    'max_slippage_bps','fee_discount_multiplier','poll_seconds'):
+            if not math.isfinite(float(v[key])) or float(v[key])<0:
+                raise ValueError('Invalid predict.fun simulation parameter: '+key)
+        if v['budget_usdt']<=0 or v['min_fill_usdt']>v['budget_usdt'] or v['poll_seconds']<1:
+            raise ValueError('Invalid quote polling interval or simulated budget')
+        if v['fee_discount_multiplier']>1 or v['fee_deduction'] not in ('shares','collateral'):
+            raise ValueError('Invalid simulated fee policy')
     return cfg

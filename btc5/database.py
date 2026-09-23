@@ -32,7 +32,40 @@ class Database:
           cycle_id INTEGER PRIMARY KEY, open_price REAL, close_price REAL, direction TEXT);
         CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, value TEXT);
         CREATE INDEX IF NOT EXISTS prediction_cycle ON predictions(cycle_id);
+        CREATE TABLE IF NOT EXISTS venue_markets (
+          market_id INTEGER PRIMARY KEY, received_at INTEGER, binding TEXT, raw_market TEXT, raw_category TEXT);
+        CREATE TABLE IF NOT EXISTS venue_books (
+          id INTEGER PRIMARY KEY, market_id INTEGER, received_at INTEGER, source_at INTEGER,
+          normalized TEXT, raw TEXT, UNIQUE(market_id, received_at));
+        CREATE INDEX IF NOT EXISTS venue_book_time ON venue_books(received_at);
+        CREATE TABLE IF NOT EXISTS venue_orders (
+          id INTEGER PRIMARY KEY, cycle_id INTEGER UNIQUE, market_id INTEGER, status TEXT,
+          signal TEXT, fill TEXT, settlement TEXT);
+        CREATE TABLE IF NOT EXISTS venue_outcomes (
+          market_id INTEGER PRIMARY KEY, received_at INTEGER, yes_payout REAL, raw TEXT);
+        CREATE TABLE IF NOT EXISTS audit_v2 (
+          id INTEGER PRIMARY KEY, timestamp INTEGER, cycle_id INTEGER, kind TEXT, payload TEXT);
+        CREATE INDEX IF NOT EXISTS audit_v2_cycle ON audit_v2(cycle_id,timestamp);
+        CREATE TABLE IF NOT EXISTS paper_positions_v2 (
+          id INTEGER PRIMARY KEY, scenario TEXT, cycle_id INTEGER, signal TEXT,
+          fill TEXT, settlement TEXT, UNIQUE(scenario,cycle_id));
+        CREATE TABLE IF NOT EXISTS venue_resolution_checks (
+          id INTEGER PRIMARY KEY, market_id INTEGER, received_at INTEGER, payout REAL, raw TEXT);
+        CREATE INDEX IF NOT EXISTS resolution_check_market ON venue_resolution_checks(market_id,received_at);
+        CREATE TABLE IF NOT EXISTS forward_observations (
+          id INTEGER PRIMARY KEY, run_id TEXT, timestamp INTEGER, cycle_id INTEGER, market_id INTEGER,
+          book_id INTEGER, prediction_id INTEGER, eligible INTEGER, payload TEXT,
+          UNIQUE(run_id,book_id));
+        CREATE INDEX IF NOT EXISTS forward_cycle ON forward_observations(run_id,cycle_id,timestamp);
         ''')
+        if 'available_at' not in {r[1] for r in self.conn.execute('PRAGMA table_info(predictions)')}:
+            self.conn.execute('ALTER TABLE predictions ADD COLUMN available_at INTEGER')
+            self.conn.commit()
+
+    def audit(self,timestamp,cycle,kind,payload):
+        with self.conn:
+            self.conn.execute('INSERT INTO audit_v2(timestamp,cycle_id,kind,payload) VALUES (?,?,?,?)',
+                (timestamp,cycle,kind,dumps(payload)))
 
     def close(self):
         self.conn.close()
@@ -69,10 +102,10 @@ class Database:
         with self.conn:
             self.conn.executemany('INSERT OR REPLACE INTO state VALUES (?,?)', [(k, dumps(v)) for k, v in kwargs.items()])
 
-    def prediction(self, timestamp, cycle, price, probability, features, version, decision, reason, supported):
+    def prediction(self, timestamp, cycle, price, probability, features, version, decision, reason, supported,available_at=None):
         with self.conn:
             self.conn.execute('''INSERT OR IGNORE INTO predictions
                 (timestamp,cycle_id,price,up_probability,down_probability,remaining_seconds,
-                 model_version,features,decision,reason,supported) VALUES (?,?,?,?,?,?,?,?,?,?,?)''',
+                 model_version,features,decision,reason,supported,available_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
                 (timestamp, cycle, price, probability, 1 - probability, features['remaining_seconds'],
-                 version, dumps(features), decision, reason, int(supported)))
+                version, dumps(features), decision, reason, int(supported),timestamp if available_at is None else available_at))

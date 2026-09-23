@@ -21,6 +21,7 @@ def candles(n=300):
 @pytest.fixture
 def cfg(tmp_path):
     c = load_config()
+    c['paper_trading']['execution_mode']='legacy'
     c['storage'] = {'database': str(tmp_path / 'test.db'), 'model': str(tmp_path / 'model.joblib'),
                     'report': str(tmp_path / 'report.json')}
     c['model'].update(min_cycles=100, n_estimators=20, walk_forward_folds=2)
