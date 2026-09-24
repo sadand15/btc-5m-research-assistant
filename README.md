@@ -1,6 +1,6 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 0 only.** 当前可运行系统仍为冻结 V2；尚未实现 V3 交易决策功能。V3 的目标是验证 probability → market-relative edge → executable edge → realized PnL，允许大量 NO TRADE。开始阅读 [V3 路线与阶段状态](docs/research/V3_ROADMAP.md)、[架构](docs/architecture/V3_ARCHITECTURE.md)、[数据库提案](docs/architecture/V3_DATABASE.md) 和 [迁移边界](docs/architecture/V3_MIGRATION.md)。下方 V2 说明及历史研究结果保持原有含义。
+> **V3 development branch — pre-M1 design only.** 当前可运行系统仍为冻结 V2；尚未实现 V3 交易决策功能。V3 的目标是验证 probability → market-relative edge → executable edge → realized PnL，允许大量 NO TRADE。开始阅读 [V3 路线与阶段状态](docs/research/V3_ROADMAP.md)、[架构](docs/architecture/V3_ARCHITECTURE.md)、[数据库提案](docs/architecture/V3_DATABASE.md) 和 [迁移边界](docs/architecture/V3_MIGRATION.md)。最新状态见 [严格限于运行健康的 pre-M1 报告](docs/research/V3_PRE_M1.md)。下方 V2 说明及历史研究结果保持原有含义。
 
 ## Overview
 

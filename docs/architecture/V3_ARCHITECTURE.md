@@ -6,9 +6,13 @@
 
 ```mermaid
 flowchart TD
-    Data[Market data: underlying and venue] --> Features[Causal feature engine]
+    Data[Received venue market data] --> Raw[Durable secret-safe RawMarketEvent]
+    Raw --> Validation[Normalize and validate]
+    Validation -->|accepted| Market[Valid MarketSnapshot]
+    Validation -->|rejected| Failure[Persisted ValidationFailure]
+    Market --> Features[Causal feature engine]
+    Underlying[Validated underlying price events] --> Features
     Features --> Prediction[Prediction engine and calibration]
-    Data --> Market[Validated market snapshot]
     Prediction --> Edge[Edge engine: YES / NO / abstain]
     Market --> Edge
     Edge --> Decision[Decision policy]
@@ -19,6 +23,9 @@ flowchart TD
     Fill --> Settlement[Official settlement]
     Settlement --> Analytics[Calibration, edge and execution analytics]
     Store[(Versioned audit database)] --- Edge
+    Store --- Raw
+    Store --- Validation
+    Store --- Failure
     Store --- Decision
     Store --- Execution
     Store --- Settlement
@@ -33,8 +40,8 @@ flowchart TD
 
 | 子包 | 输入 → 输出 / 责任 |
 |---|---|
-| `data/` | 独立只读行情订阅 → 带接收时间的原始市场事件；连接健康 |
-| `market/` | 原始事件 → MarketSnapshot、校验结果、市场结算规则绑定 |
+| `data/` | 独立只读行情订阅 → 先持久化不含凭证的 RawMarketEvent（包括 malformed）；连接健康 |
+| `market/` | RawMarketEvent → validation event + 合法 MarketSnapshot，或 validation failure；规则绑定 |
 | `features/` | 截止 available_at 的已知事件 → FeatureVector 和版本 |
 | `models/` | 特征与只读模型 artifact → Prediction，含预测目标及支持域 |
 | `calibration/` | 分组时间划分的训练/验证集 → 校准 artifact；独立测试评分 |
@@ -56,7 +63,9 @@ flowchart TD
 
 MarketSnapshot 包含 market_id、observed_at/received_at、source_at、expiry、YES/NO bid/ask、双边逐档 price/quantity 深度、spread、quote_age_ms、source、reference_underlying_price、参考价时间、feed_id、opening_reference、rule_hash、outcome_mapping、market_status。深度单位为 shares；价格为每 share 的 collateral。quote_age_ms 是在评估时计算的审计值，不是永远有效的缓存属性。
 
-Predict.fun 若只返回 YES book，可从 YES bids 推导 NO asks = 1 − YES bid，并保留 `derived` 标识和原始引用。互补深度不是独立流动性，不能重复消费。禁止将 mid 当成交价。缺失、非有限数、越界、crossed、异常 spread、stale、无可靠规则或未知 outcome mapping 均阻止交易。
+Predict.fun 若只返回 YES book，可从 YES bids 推导 NO asks = 1 − YES bid，并保留 `derived` 标识和原始引用。互补深度不是独立流动性，不能重复消费。禁止将 mid 当成交价。缺失、非有限数、越界、crossed、异常 spread、stale、无可靠规则或未知 outcome mapping 均导致 validation failure，不创建 MarketSnapshot。
+
+原始事件、验证结论、合法快照分别存储。RawMarketEvent 保留无法解析的安全载荷、接收时点和 sequence，未知 source_at/market_id 可空；验证事件记录 raw_event_id、完整拒绝原因、validator_version、validated_at 和上下文 hash。合法 MarketSnapshot 仅由验证 factory 创建且不可变，所有下游收到的对象均已满足结构和校验时点 invariant，不依赖 validation_status 二次甄别。决策时仍需按当前时间复检 freshness/expiry。详见 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md)。
 
 Prediction 包含 p_yes、model_version/hash、feature_version/hash、available_at、input_cutoff、market/cycle 绑定、target_feed/rule、calibration_version 和 support_status。p_yes 表示当前市场 YES 的获胜概率，不默认 YES 就是 Up；映射需要核实。
 

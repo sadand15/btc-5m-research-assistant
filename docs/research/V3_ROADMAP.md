@@ -1,11 +1,11 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 0，设计与冻结保护阶段**。可运行功能仍是 V2；V3 Snapshot、Edge、Risk、Dashboard、Docker 均尚未实现。本阶段完成后停止，不自动进入 M1。
+当前：**Milestone 0 已完成，pre-M1 修正阶段**。可运行功能仍是 V2；V3 Snapshot、Edge、Risk、Dashboard、Docker 均尚未实现。原始事件与合法快照分层按 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md) 执行。本阶段完成后停止，不自动进入 M1。
 
 | 阶段 | 交付与验收重点 |
 |---|---|
 | M0 | V2 哈希核验、frozen tag、独立 v3-dev、架构/迁移/schema 提案、全套回归、一次文档提交 |
-| M1 | MarketSnapshot、YES/NO 映射、逐档深度、可见时间与校验；独立存储和实验 envelope；stale/crossed/missing/nonfinite/未来时间/路径隔离测试 |
+| M1 | RawMarketEvent → validation → valid MarketSnapshot 或 ValidationFailure；独立 raw/validation/snapshot 三层表；YES/NO 映射、深度与时间 invariant；每类坏输入落原始事件及拒绝且零 snapshot；秘密过滤、重试/故障恢复、FK/路径隔离及因果测试 |
 | M2 | 双侧 raw/net EV、费用单位及扣除方式、避免重复 spread、NO_TRADE；固定配置假设、YES/NO/成本/阈值边界测试 |
 | M3 | Decision + liquidity/source gates；所有拒绝可审计，输入缺失仍有记录；foreign key、幂等、来源/规则/深度/TTE gate 测试 |
 | M4 | Calibration、edge buckets、TTE、阈值和成本全曲线；分组时间隔离、统计单位和缺失结果测试，不选历史最优阈值 |

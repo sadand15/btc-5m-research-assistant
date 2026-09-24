@@ -6,7 +6,7 @@ M0 仅设计，不执行 DDL，不连接 V2 数据库。后续使用 V3 worktree
 
 每个事件有唯一 `id`（可由 experiment_id + 类型 + 输入序号确定性生成）、`experiment_id` FK、`event_at`、`received_at/available_at`（适用时）、`recorded_at`、`sequence`、`version`、`model_version`、`config_version`（规范配置 SHA256）、`source`、`schema_version`。尚未产生模型结果的市场事件使用明确的 `not_applicable`，不伪造版本。
 
-数值校验拒绝 NaN/Infinity。计价及费用明确 collateral/share 单位与舍入规则；精确记账计划使用 Decimal 和规范化十进制文本或带 scale 的整数，不依赖 float 累加余额。概率研究计算可以 float，原始报价保留可复核精度。
+合法快照的数值校验拒绝 NaN/Infinity；原始事件仍保留包含非法数值的安全载荷及失败记录，不能因解析失败丢掉事件。计价及费用明确 collateral/share 单位与舍入规则；精确记账计划使用 Decimal 和规范化十进制文本或带 scale 的整数，不依赖 float 累加余额。概率研究计算可以 float，原始报价保留可复核精度。
 
 ## Tables
 
@@ -15,10 +15,12 @@ M0 仅设计，不执行 DDL，不连接 V2 数据库。后续使用 V3 worktree
 | 表 | 关键字段与关联 |
 |---|---|
 | `experiments` | id、git_commit、dirty_patch_hash（发布研究要求 clean）、model_version/hash、data_version/hash、feature_version、config_hash/config_json、start/end UTC、seed、运行模式、fee/execution/latency assumptions、依赖环境哈希、计划样本选择规则 |
-| `market_snapshots` | market_id、cycle、expiry、source_at、bid/ask、YES/NO depth、reference prices/timestamps/feed、rule_hash、outcome_mapping、raw_payload_hash、validation_status、rejection_reason |
+| `raw_market_events` | id、experiment_id、source、source_at（无法解析时 null）、received_at、sequence、market_id（无法解析时 null）、安全 raw payload 或持久 artifact reference、payload_hash、schema_version、version、ingestion_status、redaction_version；保存每个实际收到的事件，包括 malformed |
+| `market_validation_events` | raw_event_id、validation_status（ACCEPTED/REJECTED）、rejection_reasons 列表、validator_version、validation_context_hash、validated_at；同一原始事件的不同验证版本保留独立记录 |
+| `market_snapshots` | raw_event_id、validation_event_id、market_id、cycle、expiry、source_at、received_at/observed_at、validated_at、bid/ask、YES/NO depth、reference prices/timestamps/feed、rule_hash、outcome_mapping、normalizer_version、validation_context_hash；只插入验证成功的完整合法快照，不含用于辨别半合法对象的 validation_status |
 | `predictions` | snapshot_id（可为空）、market/cycle、input_cutoff、available_at、p_yes、target_definition、support_status、feature_hash/values、calibration_version；MODEL_UNAVAILABLE 也保存状态 |
 | `edge_evaluations` | prediction_id、snapshot_id、evaluated_at、quantity、raw_yes/no_edge、net_yes/no_edge、双侧 fee/spread/depth/latency 成本、mid/ask 定义、preferred_side、confidence、reason |
-| `decisions` | edge_id（可为空）、prediction_id/snapshot_id（输入缺失可空）、action、decision_at、所有 rejection reasons、primary_reason、gate 结果、attempt_id；每次评估必有结果 |
+| `decisions` | edge_id（可为空）、prediction_id/snapshot_id（输入缺失可空）、raw_event_id/validation_event_id（输入拒绝时关联）、action、decision_at、所有 rejection reasons、primary_reason、gate 结果、attempt_id；每次评估必有结果 |
 | `orders` | decision_id、side、requested_shares、max_collateral、limit_price、submitted_at、execution_due_at、expiry、risk_reservation_id、idempotency_key |
 | `order_events` | order_id、event_type（accepted/rejected/partial/filled/cancelled/expired）、reason、execution_snapshot_id、remaining_qty；append-only |
 | `fills` | order_id、execution_snapshot_id、executed_at、gross/net shares、逐档价格数量、VWAP、fee/currency、slippage、actual_delay_ms、collateral_debit |
@@ -35,7 +37,10 @@ M0 仅设计，不执行 DDL，不连接 V2 数据库。后续使用 V3 worktree
 - 一个 decision 至多一个 entry order（首版），order 可有多个 fill；市场结算可服务多个 fill。无需给所有 prediction 强造一个订单。
 - 风险预留、order accepted、ledger entry 在一个事务；fill 与预留调整在一个事务；结算 credit 与 fill_settlements 在一个事务。重启重放不能重复扣款或入账。
 - 事件 append-only，状态由投影重建。官方结算更正添加 revision 和冲正分录，不 UPDATE 掉历史 PnL。指标必须声明 as-of，避免用尚未发布的结算影响当时风险决策。
-- 无效/缺失报价仍需保存接收事件及拒绝原因。不能用过强的原始表 CHECK 约束把坏数据静默丢掉；有效投影和决策层才要求完整有效字段。认证头、cookie、Key 和私人配置绝不进入 raw payload。
+- 原始事件先持久化；验证失败只生成 REJECTED validation event，不生成 market_snapshots 行。验证成功时 ACCEPTED event 与合法 snapshot 在同一事务写入。snapshot 的 `(experiment_id, raw_event_id, validation_event_id)` 必须关联同一来源且被接受的验证事件；由事务 repository、FK/唯一约束及对应数据库约束共同保证，不能只靠调用者自觉检查。
+- 对同一 raw_event、validator_version、validation_context_hash 重试幂等；上下文包含验证时点、规则、时效阈值和 normalizer_version。重放保留原收到时间，不能使用未来规则重新标记过去输入。新版本重验证新增事件，不覆盖原验证结论和快照。
+- 原始表仅对 envelope 作约束，无法解析的市场字段允许 null；合法快照表对所有必需字段、范围与关联作严格约束。无效事件的拒绝可通过 decision 的 raw_event_id/validation_event_id 记录，snapshot_id 为 null，不能伪造占位快照。
+- 认证头、cookie、API Key 和私人配置绝不进入任何 payload、artifact、日志或错误文本。先剥离传输认证元数据，再对市场 body 脱敏；payload_hash 计算存储后的安全字节，并记录编码、redaction_version 和是否有脱敏。不得为了“原始”而保存秘密。
 - 索引至少覆盖 `(experiment_id, market_id, received_at, sequence)`、prediction available_at、order execution_due_at、risk event_at、fill order_id、settlement market_id/available_at。
 
 ## Audit questions
