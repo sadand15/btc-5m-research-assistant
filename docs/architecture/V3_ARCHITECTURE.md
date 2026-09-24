@@ -1,0 +1,95 @@
+# V3 Architecture — Milestone 0 design
+
+状态：2026-09-25 设计基线，尚未实现。研究和模拟执行专用；不签名、不下真钱订单。不以 Accuracy 为主要优化目标，不用当前 V2 盲测结果选择模型、参数或阈值。
+
+## Dependency flow
+
+```mermaid
+flowchart TD
+    Data[Market data: underlying and venue] --> Features[Causal feature engine]
+    Features --> Prediction[Prediction engine and calibration]
+    Data --> Market[Validated market snapshot]
+    Prediction --> Edge[Edge engine: YES / NO / abstain]
+    Market --> Edge
+    Edge --> Decision[Decision policy]
+    Decision --> Liquidity[Liquidity and source gates]
+    Liquidity --> Risk[Risk gate and reservation]
+    Risk --> Execution[Delayed book execution simulator]
+    Execution --> Fill[Partial or full fill]
+    Fill --> Settlement[Official settlement]
+    Settlement --> Analytics[Calibration, edge and execution analytics]
+    Store[(Versioned audit database)] --- Edge
+    Store --- Decision
+    Store --- Execution
+    Store --- Settlement
+    Store --> Analytics
+```
+
+拒绝是完整事件而非异常丢弃。任一阶段拒绝都保存 NO_TRADE / execution rejection、输入引用和明确原因。无成交和未结算的 PnL 为 null，不能伪装成已实现零收益。
+
+## Proposed package boundaries
+
+使用 `src/btc5_v3/` 包，避免与冻结 `btc5/` 混用。M0 不创建空模块或改变 import 路径。后续以单进程服务、SQLite 和独立 dashboard 为第一版，不拆大量微服务。
+
+| 子包 | 输入 → 输出 / 责任 |
+|---|---|
+| `data/` | 独立只读行情订阅 → 带接收时间的原始市场事件；连接健康 |
+| `market/` | 原始事件 → MarketSnapshot、校验结果、市场结算规则绑定 |
+| `features/` | 截止 available_at 的已知事件 → FeatureVector 和版本 |
+| `models/` | 特征与只读模型 artifact → Prediction，含预测目标及支持域 |
+| `calibration/` | 分组时间划分的训练/验证集 → 校准 artifact；独立测试评分 |
+| `edge/` | Prediction、Snapshot、成本假设 → 双边 EdgeEvaluation |
+| `decision/` | edge、流动性、时效、来源一致性 → BUY_YES / BUY_NO / NO_TRADE |
+| `risk/` | 决策、账户与数据健康状态 → 接受并预留最大损失，或拒绝 |
+| `execution/` | 已接受订单和延迟后盘口 → fills / rejection，释放未用预留 |
+| `settlement/` | 官方结果 → 支付及已实现 PnL；未知结果保持 pending |
+| `storage/` | 事件及引用 → 事务、唯一约束、版本信息；不负责策略 |
+| `analytics/` | 不可变实验事件 → 分桶、校准、敏感性及误差归因 |
+| `monitoring/` | 心跳、积压、过期和拒绝计数 → 结构化健康信息 |
+| `config/` | 无凭证配置 → 校验后的配置与规范化哈希 |
+
+纯数学模块不读数据库、不发网络请求、不读取未来快照；服务层注入 clock、provider、repository 和 risk state。adapter 不启动 V2 进程或导入有运行副作用的入口。
+
+## Time and market contracts
+
+所有时间为 UTC epoch milliseconds，区分 source_at（上游时间）、received_at（本机收到）、available_at（计算完成）、decision_at、execution_due_at 和 recorded_at。按 received_at 和递增 ingestion sequence 回放；相同毫秒也必须有稳定排序。未来 source_at、负 quote age、时钟异常均拒绝，不简单截成零。
+
+MarketSnapshot 包含 market_id、observed_at/received_at、source_at、expiry、YES/NO bid/ask、双边逐档 price/quantity 深度、spread、quote_age_ms、source、reference_underlying_price、参考价时间、feed_id、opening_reference、rule_hash、outcome_mapping、market_status。深度单位为 shares；价格为每 share 的 collateral。quote_age_ms 是在评估时计算的审计值，不是永远有效的缓存属性。
+
+Predict.fun 若只返回 YES book，可从 YES bids 推导 NO asks = 1 − YES bid，并保留 `derived` 标识和原始引用。互补深度不是独立流动性，不能重复消费。禁止将 mid 当成交价。缺失、非有限数、越界、crossed、异常 spread、stale、无可靠规则或未知 outcome mapping 均阻止交易。
+
+Prediction 包含 p_yes、model_version/hash、feature_version/hash、available_at、input_cutoff、market/cycle 绑定、target_feed/rule、calibration_version 和 support_status。p_yes 表示当前市场 YES 的获胜概率，不默认 YES 就是 Up；映射需要核实。
+
+V2 是 Binance proxy。即便价格接近，也不证明与 Chainlink 结算目标相同。规则、feed、开盘参考或目标域不一致时记 PRICE_SOURCE_MISMATCH；不得用放宽 divergence 限制绕过语义不匹配。V2 模型只作为对照，其可交易用途尚未验证。
+
+## Edge units and cost accounting
+
+所有 edge 统一为 collateral/share，与概率百分点可比；stake、PnL 为 collateral，二者不可直接相减。第一版仅评估 buy-and-hold-to-settlement，不涉及提前卖出或杠杆。
+
+令 p 为有效二元合约的 p_yes，m_Y/m_N 为中间价，a_Y/a_N 为最优 ask，q 为目标 shares：
+
+- raw_yes_edge = p − m_Y；raw_no_edge = (1 − p) − m_N。
+- spread_cost(side) = ask(side) − mid(side)，不是整个 bid-ask spread。
+- depth_slippage(q) = decision-time depth VWAP(q) − best ask。
+- net_yes_edge = p − a_Y − fee_per_share − depth_slippage − latency_cost。
+- net_no_edge = (1 − p) − a_N − fee_per_share − depth_slippage − latency_cost。
+
+等价的 raw-edge 分解扣一次 spread_cost；从 ask 起算的 EV 不再扣 spread。手续费扣 collateral 和扣 shares 会改变最终净持有 shares，不能简单当成相同固定百分点。费用适配器必须说明口径、舍入、最低费用和规则版本；未验证的费率只作为模拟假设。
+
+已知 50/50 支付存在时，一般 EV 应使用 E[payout]。若能估计 P(YES win)、P(split)、P(NO win)，YES 的 E[payout] = P(YES win) + 0.5P(split)。V2 只有二分类输出，不隐含提供 split 概率；第一版代理研究须显式声明忽略 split 的估值假设，真实 split 结算按 0.5 记账并单列。对真实目标未校准时保持 NO_TRADE。
+
+EdgeEvaluation 保存两侧 raw/net edge、分项成本、目标数量、可执行数量、market probability 的定义、confidence 的来源、preferred_side、原因。confidence 不等同于 edge，也不能把 max(p,1-p) 自动称为可靠胜率；未估计不确定性时为 null。
+
+minimum_net_edge 可配置，M2 前明确预注册值，不在 M0 填一个“最优值”。选最高合格正 net edge；两侧均不合格则 NO_TRADE，精确平局也 NO_TRADE。风险与流动性约束不能通过提高预测置信度绕过。
+
+## Execution and risk contracts
+
+执行使用 `decision_at + latency_ms` 之后首个实际接收的有效 book，且在订单过期前。成交记录该 book 的实际接收时间，不倒签为理想执行时间。无合格新报价就拒绝或到期；不能偷用未来价格改善当时决策，也不能用信号时 ask 假装延迟成交。
+
+M5 第一版计划为受最大价格偏离约束的 depth walk，允许 partial fill，余量立即取消；订单预留最大 collateral、限制每市场并发，模拟共用 book 深度的消费。盘口不是撮合队列证据，所有成交仍是模拟。延迟报价内已体现的实际价差不在 realized PnL 中再次扣假想 latency cost。
+
+风险在决策和成交前都复检：单笔 stake、未结算敞口与预留、UTC 日损失、最大回撤、连续亏损、provider disconnected / stale / timestamp anomaly / source divergence / unclear rules。默认失败关闭。kill switch 停止新仓位并取消未成交订单，不能删除已有仓位；继续接收结算。恢复必须有明确且可审计的规则，不能重启即清空损失历史。
+
+## Unverified assumptions
+
+真实费用口径和舍入、延迟分布、可消费深度、报价丢失、参考价格一致性、split 编码及出现率、模型对结算目标的校准、样本独立性均需后续证据。M0 不声称存在可交易 edge，不读取 V2 当前收益来支持这些假设。

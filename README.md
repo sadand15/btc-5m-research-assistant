@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **V3 development branch — Milestone 0 only.** 当前可运行系统仍为冻结 V2；尚未实现 V3 交易决策功能。V3 的目标是验证 probability → market-relative edge → executable edge → realized PnL，允许大量 NO TRADE。开始阅读 [V3 路线与阶段状态](docs/research/V3_ROADMAP.md)、[架构](docs/architecture/V3_ARCHITECTURE.md)、[数据库提案](docs/architecture/V3_DATABASE.md) 和 [迁移边界](docs/architecture/V3_MIGRATION.md)。下方 V2 说明及历史研究结果保持原有含义。
+
 ## Overview
 
 **RESEARCH / PAPER TRADING ONLY.** BTC 五分钟方向概率研究助手，支持实时市场监控、historical replay、walk-forward validation、probability calibration 和 paper execution。不包含真实资金自动交易、钱包签名或真实订单提交。
