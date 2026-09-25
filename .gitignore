@@ -28,3 +28,6 @@ htmlcov/
 .vscode/
 Thumbs.db
 .DS_Store
+*.egg-info/
+build/
+dist/

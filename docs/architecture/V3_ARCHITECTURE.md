@@ -1,6 +1,6 @@
 # V3 Architecture — Milestone 0 design
 
-状态：2026-09-25 设计基线，尚未实现。研究和模拟执行专用；不签名、不下真钱订单。不以 Accuracy 为主要优化目标，不用当前 V2 盲测结果选择模型、参数或阈值。
+状态：2026-09-25，M1 已实现 ingestion 子集；下方完整交易链仍为后续设计。M1 代码仅位于 `src/btc5_v3/`，实际构造、时效和数据库约束以 [M1 契约](V3_M1_CONTRACT.md) 为准。未实现模型、决策、风险、执行、dashboard 或交易循环。研究和模拟执行专用；不签名、不下真钱订单，不用当前 V2 盲测结果选择模型、参数或阈值。
 
 ## Dependency flow
 
@@ -36,7 +36,7 @@ flowchart TD
 
 ## Proposed package boundaries
 
-使用 `src/btc5_v3/` 包，避免与冻结 `btc5/` 混用。M0 不创建空模块或改变 import 路径。后续以单进程服务、SQLite 和独立 dashboard 为第一版，不拆大量微服务。
+使用 `src/btc5_v3/` 包，避免与冻结 `btc5/` 混用。M1 只创建 market、storage、experiments、config 及共享编码工具、synthetic demo；未来模块不创建空壳。后续以单进程服务、SQLite 和独立 dashboard 为第一版，不拆大量微服务。
 
 | 子包 | 输入 → 输出 / 责任 |
 |---|---|
@@ -63,7 +63,7 @@ flowchart TD
 
 MarketSnapshot 包含 market_id、observed_at/received_at、source_at、expiry、YES/NO bid/ask、双边逐档 price/quantity 深度、spread、quote_age_ms、source、reference_underlying_price、参考价时间、feed_id、opening_reference、rule_hash、outcome_mapping、market_status。深度单位为 shares；价格为每 share 的 collateral。quote_age_ms 是在评估时计算的审计值，不是永远有效的缓存属性。
 
-Predict.fun 若只返回 YES book，可从 YES bids 推导 NO asks = 1 − YES bid，并保留 `derived` 标识和原始引用。互补深度不是独立流动性，不能重复消费。禁止将 mid 当成交价。缺失、非有限数、越界、crossed、异常 spread、stale、无可靠规则或未知 outcome mapping 均导致 validation failure，不创建 MarketSnapshot。
+Predict.fun 若只返回 YES book，可从 YES bids 推导 NO asks = 1 − YES bid，并保留 `derived` 标识和原始引用。互补深度不是独立流动性，不能重复消费。禁止将 mid 当成交价。M1 的缺失、非有限数、越界、crossed、规则或 outcome mapping 不匹配导致结构验证失败；spread 是描述字段，异常 spread 的使用门槛留待后续。stale 与 expiry 在显式使用时点通过 freshness 函数判断，不永久标记在 snapshot 上。
 
 原始事件、验证结论、合法快照分别存储。RawMarketEvent 保留无法解析的安全载荷、接收时点和 sequence，未知 source_at/market_id 可空；验证事件记录 raw_event_id、完整拒绝原因、validator_version、validated_at 和上下文 hash。合法 MarketSnapshot 仅由验证 factory 创建且不可变，所有下游收到的对象均已满足结构和校验时点 invariant，不依赖 validation_status 二次甄别。决策时仍需按当前时间复检 freshness/expiry。详见 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md)。
 

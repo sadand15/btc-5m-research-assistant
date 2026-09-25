@@ -1,6 +1,22 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — pre-M1 design only.** 当前可运行系统仍为冻结 V2；尚未实现 V3 交易决策功能。V3 的目标是验证 probability → market-relative edge → executable edge → realized PnL，允许大量 NO TRADE。开始阅读 [V3 路线与阶段状态](docs/research/V3_ROADMAP.md)、[架构](docs/architecture/V3_ARCHITECTURE.md)、[数据库提案](docs/architecture/V3_DATABASE.md) 和 [迁移边界](docs/architecture/V3_MIGRATION.md)。最新状态见 [严格限于运行健康的 pre-M1 报告](docs/research/V3_PRE_M1.md)。下方 V2 说明及历史研究结果保持原有含义。
+> **V3 development branch — Milestone 1 ingestion.** 已实现独立、可审计的 raw event → validation → snapshot 管线；未实现预测、交易决策或交易循环。最新交付见 [M1 报告](docs/research/V3_MILESTONE_1.md) 和 [实际 M1 契约](docs/architecture/V3_M1_CONTRACT.md)。下面的 V2 文档仍描述原冻结发布，不代表 V3 已实现那些研究功能。
+
+## V3 M1 quick start
+
+只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换正在部署 V2 的原目录。V3 包自身仅用 Python 标准库；完整旧测试仍需原 requirements。
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m pip install -e . --no-deps
+.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m btc5_v3.demo --project-root .
+```
+
+demo 使用两条固定 synthetic 事件：合法事件生成一个 snapshot，crossed book 保留原始事件及 INVALID 记录、不生成 snapshot。输出应为当前 demo experiment 的 **2 raw / 2 validation / 1 snapshot**；同一版本重跑不新增逻辑事件。CLI 要求工作区干净，未提交修改时拒绝用旧 HEAD 登记实验。数据库仅写本 worktree 的 `runtime/v3/demo.sqlite`，不连接外部行情、不读取 V2 数据。通用数据库默认位于显式 project_root 下 `runtime/v3/research.sqlite`。
+
+`source_at`、`received_at`、`available_at` 和 sequence 分开保存；freshness 使用显式 decision_at，不能把“曾合法”理解为永远新鲜。派生 NO 档位共享 YES 原档位的 liquidity_id，不能当作独立深度。RawEvent 与 snapshot 的区别、schema、拒绝原因和安全边界见 [M1 契约](docs/architecture/V3_M1_CONTRACT.md)。
 
 ## Overview
 

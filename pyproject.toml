@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "btc5-v3-ingestion"
+version = "0.1.0"
+description = "Isolated, synthetic-tested prediction-market ingestion; no trading"
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools.packages.find]
+where = ["src"]

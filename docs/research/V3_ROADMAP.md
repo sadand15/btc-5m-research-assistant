@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 0 已完成，pre-M1 修正阶段**。可运行功能仍是 V2；V3 Snapshot、Edge、Risk、Dashboard、Docker 均尚未实现。原始事件与合法快照分层按 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md) 执行。本阶段完成后停止，不自动进入 M1。
+当前：**Milestone 1 已实现，等待作者阶段审阅后再决定 M2**。V3 仅有 ingestion、校验、四表存储及 synthetic demo；无 Edge、Risk、Dashboard、Docker 或交易循环。原始事件与合法快照分层按 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md) 执行，M1 对时间和首次验证的具体约束见 [M1 契约](../architecture/V3_M1_CONTRACT.md)。本阶段完成后停止，不自动进入 M2。
 
 | 阶段 | 交付与验收重点 |
 |---|---|

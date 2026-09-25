@@ -1,6 +1,8 @@
-# V3 Database proposal — not a migration
+# V3 Database — M1 subset and future proposal
 
-M0 仅设计，不执行 DDL，不连接 V2 数据库。后续使用 V3 worktree 内 `runtime/v3/research.sqlite`，禁止 ATTACH 或写入 V2 `runtime/research.sqlite`。SQLite WAL、foreign_keys=ON、单 writer 的事务序列适合第一版；实际迁移从 M1 开始逐步落地。
+M1 已实现四张表：experiments、raw_market_events、market_validation_events、market_snapshots。真实 DDL 在 `src/btc5_v3/storage/database.py`，user_version=1，WAL、foreign_keys=ON。详细列与约束见 [M1 契约](V3_M1_CONTRACT.md)。其余表仍是未来提案，不创建，也不连接 V2 数据库。数据库限于 V3 worktree 的 `runtime/v3/`，路径隔离在 SQLite 打开前执行。
+
+M1 使用 VALID / INVALID，而不是提案中的 ACCEPTED / REJECTED；每个实验内同一原始事件只有首次验证结果及至多一个逻辑快照。重试保持首次接收与验证时间。换 validator/config 或另行复核必须新建 experiment，不覆盖原结果。原始 payload 内联存储为受大小限制的安全 JSON，未实现外部 artifact 管理或完整账本。价格/数量为有限 Decimal 的规范文本，非法非有限输入改为 `[NON_FINITE]` 符号，不存非有限 JSON 数字。model_version 固定 not_applicable，配置/来源/版本通过 experiment、raw 和 validation FK 关联，不在每行重复全部字段。
 
 ## Common event envelope
 
@@ -10,7 +12,7 @@ M0 仅设计，不执行 DDL，不连接 V2 数据库。后续使用 V3 worktree
 
 ## Tables
 
-下表字段补充共同 envelope；真实 DDL 和 CHECK/FK 约束由对应里程碑实现。
+下表保留总体设计；M1 的精确实现以上述契约与 DDL 为准，其余字段由未来里程碑实现。
 
 | 表 | 关键字段与关联 |
 |---|---|
