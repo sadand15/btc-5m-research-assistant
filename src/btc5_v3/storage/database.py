@@ -46,17 +46,19 @@ class Database:
         try:
             version=self.connection.execute('PRAGMA user_version').fetchone()[0]
             tables=self.connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-            if version not in (0,1,2,3,4) or (version==0 and tables):
+            if version not in (0,1,2,3,4,5) or (version==0 and tables):
                 raise ValueError('not an M1 database')
             self.connection.execute('PRAGMA foreign_keys=ON')
-            if version in (1,2,3,4):
+            if version in (1,2,3,4,5):
                 expected={'experiments','raw_market_events','market_validation_events','market_snapshots'}
                 if version>=2:
                     expected |= {'predictions','edge_evaluations'}
                 if version>=3:
                     expected.add('decisions')
-                if version==4:
+                if version>=4:
                     expected |= {'resolved_outcomes','analysis_runs','analysis_results'}
+                if version>=5:
+                    expected |= {'path_analysis_runs','path_analysis_results'}
                 if {row[0] for row in tables}!=expected:
                     raise ValueError('incomplete M1 schema')
                 if self.connection.execute('PRAGMA journal_mode').fetchone()[0]!='wal':

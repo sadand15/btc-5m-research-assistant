@@ -1,5 +1,9 @@
 # V3 Database — M1–M4 implementation and future proposal
 
+## Current schema 5 — M4.5
+
+新增 `path_analysis_runs` 与 `path_analysis_results`，合计十二表。前者保存同实验的原始 point/outcome archives、config/hash、input hash、Git SHA、cutoff 和显式 creation metadata；后者保存完整 deterministic report/hash，通过同实验复合外键链接 run。原子写入，UPDATE/DELETE/REPLACE 拒绝，重试保留首次创建元数据，读回重放完整输入核验结果。未向 MarketSnapshot 写入未来派生字段；无 orders/fills/positions。详见 [M4.5 contract](V3_M4_5_PATH_CONTRACT.md)。下方保留此前 schema 设计。
+
 M4 当前为 user_version=4、十表，只新增下列三表。AnalyticsRepository 显式执行 M2/M3/M4 迁移，各阶段有事务和版本检查；普通 Database reopen 不重跑 DDL。所有文件继续受 V3 runtime/v3 路径保护。M4 不创建 execution/order/fill/risk 表。
 
 | M4 表 | 实际列与约束 |

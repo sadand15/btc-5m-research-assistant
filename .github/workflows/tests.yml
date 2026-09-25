@@ -25,4 +25,5 @@ jobs:
       - run: python -m btc5_v3.edge.demo --project-root .
       - run: python -m btc5_v3.decision.demo --project-root .
       - run: python -m btc5_v3.analytics.demo --project-root .
+      - run: python -m btc5_v3.path.demo --project-root .
       - run: python scripts/security_scan.py history

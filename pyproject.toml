@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "btc5-v3-ingestion"
-version = "0.4.0"
+version = "0.4.5"
 description = "Isolated market research, admissibility and post-hoc analytics; no trading"
 requires-python = ">=3.11"
 dependencies = []

@@ -1,8 +1,8 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 4 research evidence.** M1 数据、M2 Edge、M3 admissibility 与 M4 概率质量/Edge Analytics 已实现。M4 是 measurement，不拟合校准器、不训练、不生成订单。见 [M4 报告](docs/research/V3_MILESTONE_4.md) 与 [M4 契约](docs/architecture/V3_M4_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+> **V3 development branch — Milestone 4.5 intracycle path evidence.** 在 M1–M4 基础上增加周期内 YES/NO、mid/bid 路径研究，保持 missing/stale 与 post-hoc 时间边界。无 execution simulation、订单、策略推荐或阈值优化。见 [M4.5 报告](docs/research/V3_MILESTONE_4_5.md) 与 [路径契约](docs/architecture/V3_M4_5_PATH_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
 
-## V3 M4 quick start
+## V3 M4.5 quick start
 
 仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 包只用标准库，完整 legacy tests 仍需原 requirements。
 
@@ -15,7 +15,10 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.edge.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.decision.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.analytics.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.path.demo --project-root .
 ```
+
+M4.5 path demo 使用 8 个 synthetic markets，覆盖 reversal、continuation、whipsaw、temporary rebound、split、宽 spread 和 stale peak。仅写 `runtime/v3/m4-5-demo.sqlite`、`m4-5-report.json`、`m4-5-report.md`。报告同时提供 mid/bid 全部固定 rebound grids 和 TTE/质量分层，观测缺口不插值。Bid 只是可观察价格，不保证成交；这些合成结果不能证明真实市场有可重复规律。没有合法 BTC series 时 shock conditioning 为 unavailable。
 
 各 CLI 要求 clean commit，以实际 Git SHA 标识研究。M4 demo 使用 64 个独立 synthetic markets，包含校准/过度自信概率、YES/NO、不同 TTE、stale 拒绝和 split；只写本 worktree 的 runtime/v3/m4-demo.sqlite、m4-report.json、m4-report.md。同版本重跑幂等，不访问 V2 数据或真实平台。
 
@@ -25,7 +28,7 @@ python -m venv .venv
 
 Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
 
-层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 research evidence → M5 execution realism**。M5 与 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism**。M5 与 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 

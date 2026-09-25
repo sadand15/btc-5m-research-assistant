@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 4 已实现，等待作者审查后再决定 M5**。M4 是概率质量/Edge Analytics measurement，使用显式独立研究归档、post-hoc 标签、固定分桶和完整 sensitivity grids；没有模型训练、校准拟合、参数优化、真实执行或 risk。见 [M4 契约](../architecture/V3_M4_CONTRACT.md)。M1 trustworthy data、M2 economic edge、M3 admissibility、M4 research evidence、M5 execution realism。完成后停止，不自动进入 M5。
+当前：**Milestone 4.5 已实现，等待审查；停止，不开始 M5**。M4 = probability + edge evidence，M4.5 = intracycle market path evidence，M5 = execution realism。固定 path buckets、TTE/rebound grids 与独立 mid/bid 视图，只做 post-hoc measurement，不产生订单、策略或参数推荐。见 [路径契约](../architecture/V3_M4_5_PATH_CONTRACT.md)。
 
 | 阶段 | 交付与验收重点 |
 |---|---|
@@ -9,6 +9,7 @@
 | M2 | 双侧 raw/net EV、费用单位及扣除方式、避免重复 spread、NO_TRADE；固定配置假设、YES/NO/成本/阈值边界测试 |
 | M3 | Decision + liquidity/source gates；所有拒绝可审计，输入缺失仍有记录；foreign key、幂等、来源/规则/深度/TTE gate 测试 |
 | M4 | Calibration、edge buckets、TTE、阈值和成本全曲线；分组时间隔离、统计单位和缺失结果测试，不选历史最优阈值 |
+| M4.5 | 周期内价格路径、mid/bid 分离、missing/stale、固定 rebound/TTE 分层、temporary rebound 与 settlement；synthetic-only 因果与重放回归，无执行或优化 |
 | M5 | 延迟后 book、depth walk、partial fills、余量取消、费用/舍入、stale execution、同源深度不重复使用、settlement/ledger；端到端时间顺序和现金守恒测试 |
 | M6 | 单笔 stake/敞口预留、UTC daily loss、drawdown、连续亏损、kill switch；重启幂等、断线、日界线、暂停恢复测试 |
 | M7 | 独立 V3 dashboard：Overview / Edge / TTE / Execution / Risk；显示样本数、来源、假设、空值与 mock 标识；UI 集成测试 |

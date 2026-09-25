@@ -1,6 +1,8 @@
 # V3 Architecture — Milestone 0 design
 
-状态：2026-09-25，M1–M4 已实现，独立代码位于 src/btc5_v3/。M1 trustworthy data、M2 economic edge、M3 admissibility、M4 research evidence；M5 execution realism 与 M6 risk permission 仍未实现。精确实现以各阶段契约为准，最新见 [M4 契约](V3_M4_CONTRACT.md)。下方完整交易链仍含未来设计。
+最新状态：M4.5 intracycle path research 已实现；M4 probability/edge evidence → M4.5 market path evidence → M5 execution realism。最新精确契约见 [M4.5 Path Contract](V3_M4_5_PATH_CONTRACT.md)。Path analytics 只读取显式原始 snapshot archives，按 received_at/sequence 重建，未来 quote/outcome 仅用于 post-hoc 结果；mid 与 observable bid、all 与 freshness-filtered 群体分开。新增两张 path analysis 表，原始快照不写回派生结果。未实现 M5，未读取 V2 blind performance。
+
+M4 阶段保留说明：2026-09-25，M1–M4 已实现，独立代码位于 src/btc5_v3/。M1 trustworthy data、M2 economic edge、M3 admissibility、M4 research evidence；M5 execution realism 与 M6 risk permission 仍未实现。精确实现以各阶段契约为准，最新见 [M4 契约](V3_M4_CONTRACT.md)。下方完整交易链仍含未来设计。
 
 M4 只接收同一 experiment 的显式 ResearchObservation 归档及 post-hoc ResolvedOutcome。标签有 resolution_at 与 available_at，只有截至 cutoff 已知且晚于原决策/expiry 的匹配结算可用于评价。标签不进入 Prediction、Edge 或 Decision；变更隔离 fixture 的 outcome 只改变分析 fingerprint/results，不改变上游对象。
 
