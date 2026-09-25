@@ -1,12 +1,14 @@
 # V3 Architecture — Milestone 0 design
 
-状态：2026-09-25，M1 ingestion、M2 双边 Edge math 与 M3 DecisionPolicy 已实现，独立代码位于 src/btc5_v3/。精确契约见 [M1](V3_M1_CONTRACT.md)、[M2](V3_M2_CONTRACT.md)、[M3](V3_M3_CONTRACT.md)。下方整体交易链包含未来设计；无模型训练、真实执行、Risk、Dashboard 或交易循环，不使用 V2 盲测表现调参。
+状态：2026-09-25，M1–M4 已实现，独立代码位于 src/btc5_v3/。M1 trustworthy data、M2 economic edge、M3 admissibility、M4 research evidence；M5 execution realism 与 M6 risk permission 仍未实现。精确实现以各阶段契约为准，最新见 [M4 契约](V3_M4_CONTRACT.md)。下方完整交易链仍含未来设计。
 
-**M2 = economic edge；M3 = admissibility；M5 = execution reality；M6 = portfolio/risk permission。** M3 不调用 Edge Engine 重算概率/EV，不重新比较方向，只检查所请求的 YES/NO candidate 并原样引用该侧数值。拒绝为正常 NO_TRADE；固定 gate/reason precedence、全部原因和逐 gate audit 持久化。
+M4 只接收同一 experiment 的显式 ResearchObservation 归档及 post-hoc ResolvedOutcome。标签有 resolution_at 与 available_at，只有截至 cutoff 已知且晚于原决策/expiry 的匹配结算可用于评价。标签不进入 Prediction、Edge 或 Decision；变更隔离 fixture 的 outcome 只改变分析 fingerprint/results，不改变上游对象。
 
-M3 只新增 decisions 表。DecisionRepository 通过 M1/M2 各自的读回验证取得可信输入，再执行纯 DecisionPolicy；其中 M2 repository 的历史完整性重算是 M2 的职责，不是 DecisionPolicy 重新定价。禁止跨实验 FK；同 attempt_key 内容冲突拒绝。
+Calibration 是 measurement，不做 Platt/isotonic fitting。Brier payout 包含显式 split=.5；binary Brier、Log Loss、ECE/MCE/reliability 对 binary-only 样本，split 计数/频率单独报告。固定 bins/grids、Decimal 数值、确定性排序和 UTC chronological groups，不 shuffle 或伪称 OOS。
 
-M1 市场输入新增可选、带可用时间的 market_status 扩展，使用独立 validator/redaction version；旧 raw 的版本、快照 ID/序列化保持不变。Prediction target 新增可选 source/feed/reference 元数据，旧序列化省略 absent 字段。M3 对缺失状态或未确认来源拒绝，绝不把旧数据补成 OPEN 或假设 Binance 与其他 oracle 等价。语义确认必须由显式研究合同 hash、模型 hash、允许 source/feed/rule/mapping 共同绑定；synthetic demo 的合同仅证明合成设定。
+M4 输出 all-scenario 与 M3-admissible-only 的 YES/NO/combined edge view；combined 只是互斥假设的描述池，不是资金组合。Sensitivity 固定原 M3 candidate cohort，不能复活 stale/spread/depth 拒绝或切换方向。真实费用、成交和 split 概率仍未验证；hypothetical 与实际 execution 严格区分。
+
+AnalyticsRepository 只新增 resolved_outcomes / analysis_runs / analysis_results，保存 config、Git SHA、cutoff、输入归档/hash、排除理由和创建元数据。多市场 synthetic archive 是显式独立研究 experiment；不改变 M1 collector 的逐市场 ValidatorConfig 注册约束，也不自动读取现有 V2/V3 观测库。历史结果按原归档/标签 IDs 重放，后来新增数据不被静默吸收。
 
 ## Dependency flow
 

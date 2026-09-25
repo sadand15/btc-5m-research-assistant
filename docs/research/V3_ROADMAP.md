@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 3 已实现，等待作者阶段审查后再决定 M4**。当前仅有 ingestion、显式 Prediction、Edge math 与 admissibility Decision，七表存储及 synthetic demos。没有订单、成交、仓位、Risk、Dashboard 或交易循环。M2/M3/M5/M6 分别回答经济 edge、候选可接受性、成交现实、组合/风险许可。见 [M3 契约](../architecture/V3_M3_CONTRACT.md)。完成后停止，不自动进入 M4。
+当前：**Milestone 4 已实现，等待作者审查后再决定 M5**。M4 是概率质量/Edge Analytics measurement，使用显式独立研究归档、post-hoc 标签、固定分桶和完整 sensitivity grids；没有模型训练、校准拟合、参数优化、真实执行或 risk。见 [M4 契约](../architecture/V3_M4_CONTRACT.md)。M1 trustworthy data、M2 economic edge、M3 admissibility、M4 research evidence、M5 execution realism。完成后停止，不自动进入 M5。
 
 | 阶段 | 交付与验收重点 |
 |---|---|
@@ -15,7 +15,7 @@
 | M8 | Dockerfile、compose、secret 注入、持久卷、healthcheck、restart、结构化日志；容器启动/故障/恢复验收，再确定云主机部署 |
 | M9 | 只有严格 OOS/forward 证据支持稳定 edge 后才讨论 meta-model；不是默认待实现功能 |
 
-M4 先交付描述性 edge/calibration 与候选覆盖率分析；没有 M5 延迟成交证据时 realized PnL、profit factor、Sharpe 等为 null。M5 后补齐同一预注册分析，不提前用旧 mock PnL 假装新执行结果。M3 之前/期间未完成风险与执行链时，不启动自动模拟开仓循环。
+M4 交付描述性 edge/calibration、候选覆盖率和明确 hypothetical 的 decision-time realized value；没有 M5 延迟成交证据时 actual execution PnL 不存在，profit factor/Sharpe 保持 null。M5 后补齐同一预注册分析，不提前用旧 mock PnL 假装新执行结果。M3 之前/期间未完成风险与执行链时，不启动自动模拟开仓循环。
 
 ## Analysis definitions to preregister
 

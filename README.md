@@ -1,10 +1,10 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 3 admissibility.** M1 ingestion、M2 economic edge 和 M3 DecisionPolicy 已实现。输出只有研究候选；没有订单、成交、Risk、Dashboard 或交易循环。交付见 [M3 报告](docs/research/V3_MILESTONE_3.md) 与 [M3 契约](docs/architecture/V3_M3_CONTRACT.md)。下方 V2 文档仍描述原冻结发布。
+> **V3 development branch — Milestone 4 research evidence.** M1 数据、M2 Edge、M3 admissibility 与 M4 概率质量/Edge Analytics 已实现。M4 是 measurement，不拟合校准器、不训练、不生成订单。见 [M4 报告](docs/research/V3_MILESTONE_4.md) 与 [M4 契约](docs/architecture/V3_M4_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
 
-## V3 M3 quick start
+## V3 M4 quick start
 
-只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换部署 V2 的原目录。V3 包自身仅用标准库；完整 legacy tests 仍需原 requirements。
+仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 包只用标准库，完整 legacy tests 仍需原 requirements。
 
 ```powershell
 python -m venv .venv
@@ -14,15 +14,18 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.edge.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.decision.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.analytics.demo --project-root .
 ```
 
-M1 demo 保留合法与非法 raw；M2 demo 显示 raw YES edge=.10、零费用 executable edge=.09，不重复扣 spread。M3 demo 演示四种合成情形：A 通过 → BUY_YES；B source stale → NO_TRADE；C spread 过大 → NO_TRADE；D 60/100 shares 不足 80% → NO_TRADE。各场景均无订单。
+各 CLI 要求 clean commit，以实际 Git SHA 标识研究。M4 demo 使用 64 个独立 synthetic markets，包含校准/过度自信概率、YES/NO、不同 TTE、stale 拒绝和 split；只写本 worktree 的 runtime/v3/m4-demo.sqlite、m4-report.json、m4-report.md。同版本重跑幂等，不访问 V2 数据或真实平台。
 
-CLI 要求 clean commit，以 Git SHA 登记 synthetic experiment。三种 demo 分别只写本 worktree 的 `runtime/v3/demo.sqlite`、`m2-demo.sqlite`、`m3-demo.sqlite`，同版本重跑幂等，不连接平台、不读 V2 数据。通用数据库默认位于显式 project_root 下 runtime/v3/research.sqlite。
+报告包含 coverage、Brier payout/binary、binary Log Loss、ECE/MCE/reliability bins、signed edge buckets、YES/NO/combined、Spearman、TTE/UTC day/model groups、完整 threshold/cost grids。原始概率保留；split 单独计数，不进入 binary Log Loss/ECE。收益全部是 **decision-time hypothetical realized value**，不是 execution PnL。Profit factor/Sharpe 保持 unavailable。
 
-M3 固定按 lineage、availability、market status、freshness、source/rule、edge、spread、liquidity、near-expiry、final 顺序给出 gate audit；source/receipt age 分别检查，M2 原 edge/EV 不重算。状态或目标来源未知时 fail closed。旧 M1/M2 记录能读回，但缺少 M3 必需元数据的旧候选不能默认放行。参数均为 pre-registered research assumptions，未做历史优化。
+**sensitivity analysis ≠ optimization**：固定 thresholds 2/3/5/7/10/15%，cost multipliers 1/1.5/2/3。成本压力固定使用 strict edge > 1% 的研究条件；只放大费用和 latency/extra 假设，不再扣 spread/depth。M3 拒绝永不被敏感性分析复活，不重选 side。报告不推荐参数。
 
-层次严格分开：**M2 economic edge → M3 admissibility → M5 execution reality → M6 portfolio/risk permission**。后两层未实现。模拟费用、忽略 split 的 proxy、derived NO 共享流动性等限制仍见 [M2 契约](docs/architecture/V3_M2_CONTRACT.md)。
+Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
+
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 research evidence → M5 execution realism**。M5 与 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 

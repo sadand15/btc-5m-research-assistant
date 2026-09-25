@@ -1,4 +1,20 @@
-# V3 Database — M1/M2/M3 implementation and future proposal
+# V3 Database — M1–M4 implementation and future proposal
+
+M4 当前为 user_version=4、十表，只新增下列三表。AnalyticsRepository 显式执行 M2/M3/M4 迁移，各阶段有事务和版本检查；普通 Database reopen 不重跑 DDL。所有文件继续受 V3 runtime/v3 路径保护。M4 不创建 execution/order/fill/risk 表。
+
+| M4 表 | 实际列与约束 |
+|---|---|
+| resolved_outcomes | id、experiment_id FK、market_id、payload_json/hash；UNIQUE(experiment_id,market_id)；payout/时间/来源/rule/version/semantics 保存在 canonical JSON |
+| analysis_runs | id、experiment_id FK、code_git、cutoff、created_at、config_json/hash、inputs_json、input_hash；UNIQUE(experiment_id,id) |
+| analysis_results | analysis_id PK、experiment_id、result_json/hash；复合 FK 指向同实验 analysis_runs |
+
+inputs_json 保存完整上游研究归档和显式 outcome ID 清单；读取不会自动查询 latest outcome 或新增 prediction。run 的 analysis_id 由 experiment、config hash、code Git SHA、cutoff 和内容 fingerprint 派生，creation time 不改变逻辑身份。重试保留第一次 creation metadata。outcome 同一市场的冲突重试拒绝，v1 未实现结算修订；隔离研究若需不同 fixture outcome 使用不同独立存储/experiment，不覆盖旧结果。
+
+三表均拒绝 UPDATE/DELETE/REPLACE。一次新 run 的 outcomes、run、result 在同一事务；失败全部回滚。读回核验 outcome/输入 hash、配置和完整分析重放结果。归档与 outcomes 的 experiment 必须一致；API 不静默跨 experiment 聚合。哈希不是防管理员整体改库的签名。
+
+新增研究 experiment 通过 M4_SYNTHETIC_ARCHIVE_V1 合同显式注册。M4 archive 是已产生上游记录的不可变导出，不向 M1/M2/M3 表回填 records，也不绕过原逐市场 validator 约束。现有同实验记录可显式导出后输入，但采样完整性/来源可信度需外部证据，API 不承诺自动全库 coverage。详见 [M4 契约](V3_M4_CONTRACT.md)。
+
+以下保留 M1–M3 的版本演进说明与未来提案。
 
 M3 当前为 schema user_version=3，共七表，只比 M2 增加 decisions。`DecisionRepository` 显式调用 storage/decision_repository.py 的事务迁移；先建立同实验 edge parent unique index，再建 decisions 与不可变触发器，最后更新 version。失败整个迁移回滚。M1/M2 原始记录不重写；Database 支持打开 version 1/2/3，普通 reopen 不执行 DDL。
 

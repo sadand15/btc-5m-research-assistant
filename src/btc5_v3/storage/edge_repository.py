@@ -36,7 +36,7 @@ def migrate_m2(db):
     with conn:
         conn.execute('BEGIN IMMEDIATE')
         version = conn.execute('PRAGMA user_version').fetchone()[0]
-        if version in (2, 3):
+        if version in (2, 3, 4):
             return
         if version != 1:
             raise ValueError('M2 requires M1 schema')
