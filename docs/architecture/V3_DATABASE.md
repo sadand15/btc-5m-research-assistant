@@ -1,6 +1,17 @@
-# V3 Database — M1 subset and future proposal
+# V3 Database — M1/M2 implementation and future proposal
 
-M1 已实现四张表：experiments、raw_market_events、market_validation_events、market_snapshots。真实 DDL 在 `src/btc5_v3/storage/database.py`，user_version=1，WAL、foreign_keys=ON。详细列与约束见 [M1 契约](V3_M1_CONTRACT.md)。其余表仍是未来提案，不创建，也不连接 V2 数据库。数据库限于 V3 worktree 的 `runtime/v3/`，路径隔离在 SQLite 打开前执行。
+M1 四表仍保留。M2 通过 `EdgeRepository` 显式调用事务迁移，将 user_version=1 升为 2，只新增 predictions 与 edge_evaluations，共六表；不创建 orders/fills/risk。纯 M1 Database 新建仍为 version 1，能打开 version 2，普通打开不重复 schema 写入。DDL 位于 `storage/database.py` 与 `storage/edge_repository.py`。迁移、写入均 BEGIN IMMEDIATE，失败回滚。路径隔离在打开 SQLite 前执行，只允许 V3 worktree 的 runtime/v3/；不连接 V2。
+
+M2 实际列：
+
+| 表 | 列与约束 |
+|---|---|
+| predictions | id、experiment_id FK、prediction_key、payload_json、payload_hash；UNIQUE(experiment_id,id) / UNIQUE(experiment_id,prediction_key) |
+| edge_evaluations | id、experiment_id、prediction_id、snapshot_id、evaluated_at、config_hash、config_json、payload_json、payload_hash；同实验复合 FK 指向 prediction/snapshot；UNIQUE(experiment_id,prediction_id,snapshot_id,evaluated_at,config_hash) |
+
+Prediction 的模型/特征哈希、时间、目标与概率保存在规范 JSON；Edge 的两侧值、成本、liquidity references、时间诊断、split assumption 同样保存于规范 JSON。数值保存有限 Decimal 文本。prediction_id 由实验与逻辑 prediction_key 派生；edge_id 由实验、两个输入 ID、显式评估时间与 config hash 派生。相同身份相同内容重试幂等，冲突拒绝。新配置/新评估时间是新记录而非覆盖。
+
+M2 两表有 UPDATE/DELETE/REPLACE 拒绝触发器；repository 先查重，不用 REPLACE。预测与 edge 首次写入为同一事务；跨实验输入拒绝且不能落关联记录。读回验证 canonical/hash/身份，再从已验证 snapshot、prediction、config 重新计算 edge 对照全部输出。数据库哈希用于检测意外损坏，不是防管理员重写的数字签名。精确语义见 [M2 契约](V3_M2_CONTRACT.md)。
 
 M1 使用 VALID / INVALID，而不是提案中的 ACCEPTED / REJECTED；每个实验内同一原始事件只有首次验证结果及至多一个逻辑快照。重试保持首次接收与验证时间。换 validator/config 或另行复核必须新建 experiment，不覆盖原结果。原始 payload 内联存储为受大小限制的安全 JSON，未实现外部 artifact 管理或完整账本。价格/数量为有限 Decimal 的规范文本，非法非有限输入改为 `[NON_FINITE]` 符号，不存非有限 JSON 数字。model_version 固定 not_applicable，配置/来源/版本通过 experiment、raw 和 validation FK 关联，不在每行重复全部字段。
 
@@ -12,7 +23,7 @@ M1 使用 VALID / INVALID，而不是提案中的 ACCEPTED / REJECTED；每个�
 
 ## Tables
 
-下表保留总体设计；M1 的精确实现以上述契约与 DDL 为准，其余字段由未来里程碑实现。
+下表保留总体未来设计；M1/M2 的精确实现以上述说明、各阶段契约与 DDL 为准。下表的未来字段不代表已经实现。
 
 | 表 | 关键字段与关联 |
 |---|---|

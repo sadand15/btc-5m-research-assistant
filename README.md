@@ -1,10 +1,10 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 1 ingestion.** 已实现独立、可审计的 raw event → validation → snapshot 管线；未实现预测、交易决策或交易循环。最新交付见 [M1 报告](docs/research/V3_MILESTONE_1.md) 和 [实际 M1 契约](docs/architecture/V3_M1_CONTRACT.md)。下面的 V2 文档仍描述原冻结发布，不代表 V3 已实现那些研究功能。
+> **V3 development branch — Milestone 2 edge math.** 已实现 M1 ingestion 与基于显式 Prediction 的双边 Edge Engine，仅输出候选，不实现真实交易、预测引擎、Risk、延迟成交或交易循环。交付见 [M2 报告](docs/research/V3_MILESTONE_2.md) 和 [M2 契约](docs/architecture/V3_M2_CONTRACT.md)。下方 V2 文档仍描述原冻结发布。
 
-## V3 M1 quick start
+## V3 M2 quick start
 
-只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换正在部署 V2 的原目录。V3 包自身仅用 Python 标准库；完整旧测试仍需原 requirements。
+只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换部署 V2 的原目录。V3 包自身仅用 Python 标准库；完整旧测试仍需原 requirements。
 
 ```powershell
 python -m venv .venv
@@ -12,11 +12,14 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e . --no-deps
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m btc5_v3.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.edge.demo --project-root .
 ```
 
-demo 使用两条固定 synthetic 事件：合法事件生成一个 snapshot，crossed book 保留原始事件及 INVALID 记录、不生成 snapshot。输出应为当前 demo experiment 的 **2 raw / 2 validation / 1 snapshot**；同一版本重跑不新增逻辑事件。CLI 要求工作区干净，未提交修改时拒绝用旧 HEAD 登记实验。数据库仅写本 worktree 的 `runtime/v3/demo.sqlite`，不连接外部行情、不读取 V2 数据。通用数据库默认位于显式 project_root 下 `runtime/v3/research.sqlite`。
+M1 demo 保留 2 raw / 2 validation / 1 snapshot。M2 demo 固定 YES bid/ask=0.59/0.61，p_yes=0.70 时 raw edge=0.10、零费用 executable/net edge=0.09、BUY_YES candidate；p_yes=0.60 时 NO_TRADE。完整 JSON 同时给出 NO 侧、深度、费用单位、时间诊断和配置哈希。这些都是 synthetic math，不是真实市场结果。
 
-`source_at`、`received_at`、`available_at` 和 sequence 分开保存；freshness 使用显式 decision_at，不能把“曾合法”理解为永远新鲜。派生 NO 档位共享 YES 原档位的 liquidity_id，不能当作独立深度。RawEvent 与 snapshot 的区别、schema、拒绝原因和安全边界见 [M1 契约](docs/architecture/V3_M1_CONTRACT.md)。
+两个 CLI 都要求工作区干净，以当前 Git SHA 登记实验；同版本重跑幂等。数据库分别位于本 worktree 的 `runtime/v3/demo.sqlite` 与 `runtime/v3/m2-demo.sqlite`，不读取 V2 数据或连接行情。默认通用数据库为显式 project_root 下的 `runtime/v3/research.sqlite`。
+
+M2 用显式 evaluation_at 同时检查 source/receipt age 和输入 available_at；不调用 wall clock。默认 threshold=0.01、目标一股、零费用/压力成本，仅是 **placeholder research threshold; not empirically optimized**。手续费均为模拟假设；split_model=unavailable，显式忽略 split 的 proxy 不代表完整真实 EV。derived NO 共享原始 YES 流动性身份，两侧是互斥场景，不消耗深度。M3 才实现完整使用门槛。
 
 ## Overview
 

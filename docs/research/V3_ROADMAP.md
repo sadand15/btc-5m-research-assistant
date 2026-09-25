@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 1 已实现，等待作者阶段审阅后再决定 M2**。V3 仅有 ingestion、校验、四表存储及 synthetic demo；无 Edge、Risk、Dashboard、Docker 或交易循环。原始事件与合法快照分层按 [ADR 0002](../decisions/0002-raw-events-and-valid-snapshots.md) 执行，M1 对时间和首次验证的具体约束见 [M1 契约](../architecture/V3_M1_CONTRACT.md)。本阶段完成后停止，不自动进入 M2。
+当前：**Milestone 2 已实现，等待作者阶段审阅后再决定 M3**。V3 有 ingestion、Prediction 输入契约、双边 Edge math、六表存储及 synthetic demos；无预测引擎、Decision/Risk、Dashboard、真实 Execution 或交易循环。见 [M2 契约](../architecture/V3_M2_CONTRACT.md)。本阶段完成后停止，不自动进入 M3。
 
 | 阶段 | 交付与验收重点 |
 |---|---|

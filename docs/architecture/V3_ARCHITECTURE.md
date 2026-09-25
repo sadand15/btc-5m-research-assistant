@@ -1,6 +1,10 @@
 # V3 Architecture — Milestone 0 design
 
-状态：2026-09-25，M1 已实现 ingestion 子集；下方完整交易链仍为后续设计。M1 代码仅位于 `src/btc5_v3/`，实际构造、时效和数据库约束以 [M1 契约](V3_M1_CONTRACT.md) 为准。未实现模型、决策、风险、执行、dashboard 或交易循环。研究和模拟执行专用；不签名、不下真钱订单，不用当前 V2 盲测结果选择模型、参数或阈值。
+状态：2026-09-25，M1 ingestion 与 M2 双边 Edge math 已实现，代码仅位于 `src/btc5_v3/`。精确实现见 [M1 契约](V3_M1_CONTRACT.md) 和 [M2 契约](V3_M2_CONTRACT.md)。下方完整交易链仍包含未来设计；M2 没有预测引擎、Decision/Risk、真实执行、dashboard 或交易循环。不得用 V2 盲测结果选模型、参数或阈值。
+
+M2 当前链路：合法 MarketSnapshot + 显式 Prediction + EdgeConfig → immutable EdgeEvaluation → BUY_YES / BUY_NO / NO_TRADE candidate。目标兼容性、源/接收时间、可用时间及到期检查先行；拒绝时保留原因、两侧 EV 为 null。合法输入的两侧深度分别按互斥场景计算，保留 liquidity IDs，不真实消费。Prediction 是模型/adapter 的输入契约，p_yes 明确指市场 YES；UP→YES 转换不在 Edge Engine 内隐式发生。
+
+CostBreakdown 分开保存 observed book/VWAP 与 simulation assumptions。collateral fee 增加 cash cost，shares fee 减少 expected payout 中的 net shares。spread 和 depth cost 是分解诊断，VWAP-based cost 不重复加回二者。M2 额外建立 predictions/edge_evaluations 两表和显式事务迁移，其余后续表未创建。
 
 ## Dependency flow
 
@@ -80,8 +84,8 @@ V2 是 Binance proxy。即便价格接近，也不证明与 Chainlink 结算目�
 - raw_yes_edge = p − m_Y；raw_no_edge = (1 − p) − m_N。
 - spread_cost(side) = ask(side) − mid(side)，不是整个 bid-ask spread。
 - depth_slippage(q) = decision-time depth VWAP(q) − best ask。
-- net_yes_edge = p − a_Y − fee_per_share − depth_slippage − latency_cost。
-- net_no_edge = (1 − p) − a_N − fee_per_share − depth_slippage − latency_cost。
+- collateral-fee 情形：net_yes_edge = p − VWAP_Y − cash_fee/gross_shares − latency_cost − extra_cost。
+- shares-fee 情形：net_edge = (net_shares × side_probability − collateral_spent) / gross_executed_shares；NO 使用 1−p。
 
 等价的 raw-edge 分解扣一次 spread_cost；从 ask 起算的 EV 不再扣 spread。手续费扣 collateral 和扣 shares 会改变最终净持有 shares，不能简单当成相同固定百分点。费用适配器必须说明口径、舍入、最低费用和规则版本；未验证的费率只作为模拟假设。
 
