@@ -87,6 +87,9 @@ class MarketSnapshot:
     mid_definition: str = '(best_bid+best_ask)/2; descriptive, not executable'
     no_derived: bool = True
     liquidity_independent: bool = False
+    market_status: str | None = None
+    market_status_at: int | None = None
+    market_status_available_at: int | None = None
 
     def __init__(self, *args, **kwargs):
         raise TypeError('MarketSnapshot must be created by validate_market')
@@ -125,7 +128,12 @@ class MarketSnapshot:
         return self.yes_bids+self.yes_asks
 
     def to_json(self):
-        return canonical(asdict(self))
+        value = asdict(self)
+        # Preserve exact M1 bytes/IDs for snapshots without the M3 extension.
+        for key in ('market_status', 'market_status_at', 'market_status_available_at'):
+            if value[key] is None:
+                del value[key]
+        return canonical(value)
 
 
 @dataclass(frozen=True)

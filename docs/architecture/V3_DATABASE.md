@@ -1,4 +1,16 @@
-# V3 Database — M1/M2 implementation and future proposal
+# V3 Database — M1/M2/M3 implementation and future proposal
+
+M3 当前为 schema user_version=3，共七表，只比 M2 增加 decisions。`DecisionRepository` 显式调用 storage/decision_repository.py 的事务迁移；先建立同实验 edge parent unique index，再建 decisions 与不可变触发器，最后更新 version。失败整个迁移回滚。M1/M2 原始记录不重写；Database 支持打开 version 1/2/3，普通 reopen 不执行 DDL。
+
+| M3 表 | 实际列与约束 |
+|---|---|
+| decisions | id、experiment_id FK、attempt_key、prediction_id、snapshot_id、edge_id、evaluated_at、config_hash/config_json、payload_json/payload_hash；UNIQUE(experiment_id,attempt_key)，三个输入均有 same-experiment 复合 FK |
+
+三个输入 FK 可空，以保留显式缺失输入的 NO_TRADE；传入未知非空 ID 报查找失败，跨实验 ID 拒绝落库，不能伪装成同实验引用。Prediction/Snapshot/Edge 同实验但彼此不匹配时，可保存有 lineage rejection 的 Decision。所有 gate diagnostics、原因、原 edge 值、liquidity identity、输入 hash 保存在 canonical payload。DecisionConfig（包括来源合同 hash）完整保留，可确定性重放。
+
+id = SHA256([experiment_id,attempt_key])。同一 attempt 的时间、输入或 config 变化是 conflict，不覆写；新决策需要新 attempt_key。UPDATE/DELETE/REPLACE 均被触发器拒绝。读回先验证全部输入，再重跑 M3 policy 并核验全部 payload/hash/列身份。只按记录 ID 读取，不使用 latest，因此未来事件不能改写过去结果。哈希不防管理员整体重写，不是签名。精确语义见 [M3 契约](V3_M3_CONTRACT.md)。
+
+下面保留 M1/M2 schema 说明和完整未来提案；orders/fills/positions/ledger/settlements/risk 未创建。
 
 M1 四表仍保留。M2 通过 `EdgeRepository` 显式调用事务迁移，将 user_version=1 升为 2，只新增 predictions 与 edge_evaluations，共六表；不创建 orders/fills/risk。纯 M1 Database 新建仍为 version 1，能打开 version 2，普通打开不重复 schema 写入。DDL 位于 `storage/database.py` 与 `storage/edge_repository.py`。迁移、写入均 BEGIN IMMEDIATE，失败回滚。路径隔离在打开 SQLite 前执行，只允许 V3 worktree 的 runtime/v3/；不连接 V2。
 
@@ -23,7 +35,7 @@ M1 使用 VALID / INVALID，而不是提案中的 ACCEPTED / REJECTED；每个�
 
 ## Tables
 
-下表保留总体未来设计；M1/M2 的精确实现以上述说明、各阶段契约与 DDL 为准。下表的未来字段不代表已经实现。
+下表保留总体未来设计；M1/M2/M3 的精确实现以上述说明、各阶段契约与 DDL 为准。下表的未来字段不代表已经实现。
 
 | 表 | 关键字段与关联 |
 |---|---|

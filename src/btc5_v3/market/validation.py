@@ -17,14 +17,17 @@ def validate_market(event, config: ValidatorConfig, *, evaluation_at: int) -> Va
     if hashlib.sha256(event.safe_payload.encode()).hexdigest()!=event.payload_hash:
         raise ValueError('raw payload integrity failure')
     data=json.loads(event.safe_payload)
+    status_keys = {'market_status', 'market_status_at', 'market_status_available_at'}
+    extended = isinstance(data, dict) and bool(status_keys & data.keys())
+    version = 'm3-market-metadata-1' if extended else VALIDATOR_VERSION
     reasons=[]
     def reject(reason):
         if reason not in reasons: reasons.append(reason)
-    context_hash=digest([config.hash,VALIDATOR_VERSION,evaluation_at])
+    context_hash=digest([config.hash,version,evaluation_at])
     validation_id=digest([event.id,context_hash])
     def result(snapshot=None):
         return ValidationResult(validation_id,event.id,event.experiment_id,'INVALID' if reasons else 'VALID',
-                                reasons[0] if reasons else None,tuple(reasons),VALIDATOR_VERSION,
+                                reasons[0] if reasons else None,tuple(reasons),version,
                                 evaluation_at,context_hash,snapshot)
     if not isinstance(data,dict) or data.get('_malformed'):
         reject(Reason.MALFORMED);return result()
@@ -78,6 +81,16 @@ def validate_market(event, config: ValidatorConfig, *, evaluation_at: int) -> Va
         if not timestamp(reference_at):reject(Reason.INVALID_TIMESTAMP)
         elif reference_at>event.received_at+config.clock_skew_tolerance_ms:reject(Reason.FUTURE_SOURCE_TIME)
     elif reference_at is not None:reject(Reason.MALFORMED)
+    if extended:
+        if data.get('market_status') not in ('OPEN', 'CLOSED', 'SUSPENDED', 'UNKNOWN'):
+            reject(Reason.MALFORMED)
+        status_at = data.get('market_status_at')
+        status_available = data.get('market_status_available_at')
+        if (not timestamp(status_at) or not timestamp(status_available)
+                or status_at > status_available or status_available > evaluation_at):
+            reject(Reason.INVALID_TIMESTAMP)
+        elif status_at > event.received_at+config.clock_skew_tolerance_ms:
+            reject(Reason.FUTURE_SOURCE_TIME)
     if reasons:return result()
     def levels(rows,side):
         return tuple(DepthLevel(p,q,digest([event.id,side,p]),side,False) for p,q in rows)
@@ -87,15 +100,17 @@ def validate_market(event, config: ValidatorConfig, *, evaluation_at: int) -> Va
             ctx.prec=80
             values=[DepthLevel(Decimal(1)-x.price,x.quantity,x.liquidity_id,x.origin_side,True) for x in rows]
         return tuple(sorted(values,key=lambda x:x.price,reverse=descending))
-    values=dict(snapshot_id=digest([event.id,config.hash,VALIDATOR_VERSION]),raw_event_id=event.id,
+    values=dict(snapshot_id=digest([event.id,config.hash,version]),raw_event_id=event.id,
                 experiment_id=event.experiment_id,market_id=config.market_id,source=event.source,
                 source_at=source,received_at=event.received_at,available_at=evaluation_at,
                 sequence=event.sequence,expiry=expiry,yes_bids=yes_bids,yes_asks=yes_asks,
                 no_bids=complementary(yes_asks,True),no_asks=complementary(yes_bids,False),
                 feed=config.feed,rule_hash=config.rule_hash,outcome_mapping=config.outcome_mapping,
                 reference_underlying_price=reference,reference_price_at=reference_at,
-                clock_skew_tolerance_ms=config.clock_skew_tolerance_ms,validator_version=VALIDATOR_VERSION,
+                clock_skew_tolerance_ms=config.clock_skew_tolerance_ms,validator_version=version,
                 config_hash=config.hash)
+    if extended:
+        values.update({key: data[key] for key in status_keys})
     # The only normal construction path. No permissive deserializer is exposed.
     snapshot=object.__new__(MarketSnapshot)
     for field in fields(MarketSnapshot):

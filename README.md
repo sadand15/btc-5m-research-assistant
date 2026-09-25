@@ -1,10 +1,10 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 2 edge math.** 已实现 M1 ingestion 与基于显式 Prediction 的双边 Edge Engine，仅输出候选，不实现真实交易、预测引擎、Risk、延迟成交或交易循环。交付见 [M2 报告](docs/research/V3_MILESTONE_2.md) 和 [M2 契约](docs/architecture/V3_M2_CONTRACT.md)。下方 V2 文档仍描述原冻结发布。
+> **V3 development branch — Milestone 3 admissibility.** M1 ingestion、M2 economic edge 和 M3 DecisionPolicy 已实现。输出只有研究候选；没有订单、成交、Risk、Dashboard 或交易循环。交付见 [M3 报告](docs/research/V3_MILESTONE_3.md) 与 [M3 契约](docs/architecture/V3_M3_CONTRACT.md)。下方 V2 文档仍描述原冻结发布。
 
-## V3 M2 quick start
+## V3 M3 quick start
 
-只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换部署 V2 的原目录。V3 包自身仅用 Python 标准库；完整旧测试仍需原 requirements。
+只在独立 `v3-dev` 工作目录或新 clone 中执行，不切换部署 V2 的原目录。V3 包自身仅用标准库；完整 legacy tests 仍需原 requirements。
 
 ```powershell
 python -m venv .venv
@@ -13,13 +13,16 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pytest -q
 .\.venv\Scripts\python.exe -m btc5_v3.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.edge.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.decision.demo --project-root .
 ```
 
-M1 demo 保留 2 raw / 2 validation / 1 snapshot。M2 demo 固定 YES bid/ask=0.59/0.61，p_yes=0.70 时 raw edge=0.10、零费用 executable/net edge=0.09、BUY_YES candidate；p_yes=0.60 时 NO_TRADE。完整 JSON 同时给出 NO 侧、深度、费用单位、时间诊断和配置哈希。这些都是 synthetic math，不是真实市场结果。
+M1 demo 保留合法与非法 raw；M2 demo 显示 raw YES edge=.10、零费用 executable edge=.09，不重复扣 spread。M3 demo 演示四种合成情形：A 通过 → BUY_YES；B source stale → NO_TRADE；C spread 过大 → NO_TRADE；D 60/100 shares 不足 80% → NO_TRADE。各场景均无订单。
 
-两个 CLI 都要求工作区干净，以当前 Git SHA 登记实验；同版本重跑幂等。数据库分别位于本 worktree 的 `runtime/v3/demo.sqlite` 与 `runtime/v3/m2-demo.sqlite`，不读取 V2 数据或连接行情。默认通用数据库为显式 project_root 下的 `runtime/v3/research.sqlite`。
+CLI 要求 clean commit，以 Git SHA 登记 synthetic experiment。三种 demo 分别只写本 worktree 的 `runtime/v3/demo.sqlite`、`m2-demo.sqlite`、`m3-demo.sqlite`，同版本重跑幂等，不连接平台、不读 V2 数据。通用数据库默认位于显式 project_root 下 runtime/v3/research.sqlite。
 
-M2 用显式 evaluation_at 同时检查 source/receipt age 和输入 available_at；不调用 wall clock。默认 threshold=0.01、目标一股、零费用/压力成本，仅是 **placeholder research threshold; not empirically optimized**。手续费均为模拟假设；split_model=unavailable，显式忽略 split 的 proxy 不代表完整真实 EV。derived NO 共享原始 YES 流动性身份，两侧是互斥场景，不消耗深度。M3 才实现完整使用门槛。
+M3 固定按 lineage、availability、market status、freshness、source/rule、edge、spread、liquidity、near-expiry、final 顺序给出 gate audit；source/receipt age 分别检查，M2 原 edge/EV 不重算。状态或目标来源未知时 fail closed。旧 M1/M2 记录能读回，但缺少 M3 必需元数据的旧候选不能默认放行。参数均为 pre-registered research assumptions，未做历史优化。
+
+层次严格分开：**M2 economic edge → M3 admissibility → M5 execution reality → M6 portfolio/risk permission**。后两层未实现。模拟费用、忽略 split 的 proxy、derived NO 共享流动性等限制仍见 [M2 契约](docs/architecture/V3_M2_CONTRACT.md)。
 
 ## Overview
 

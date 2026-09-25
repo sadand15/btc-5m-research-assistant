@@ -1,10 +1,12 @@
 # V3 Architecture — Milestone 0 design
 
-状态：2026-09-25，M1 ingestion 与 M2 双边 Edge math 已实现，代码仅位于 `src/btc5_v3/`。精确实现见 [M1 契约](V3_M1_CONTRACT.md) 和 [M2 契约](V3_M2_CONTRACT.md)。下方完整交易链仍包含未来设计；M2 没有预测引擎、Decision/Risk、真实执行、dashboard 或交易循环。不得用 V2 盲测结果选模型、参数或阈值。
+状态：2026-09-25，M1 ingestion、M2 双边 Edge math 与 M3 DecisionPolicy 已实现，独立代码位于 src/btc5_v3/。精确契约见 [M1](V3_M1_CONTRACT.md)、[M2](V3_M2_CONTRACT.md)、[M3](V3_M3_CONTRACT.md)。下方整体交易链包含未来设计；无模型训练、真实执行、Risk、Dashboard 或交易循环，不使用 V2 盲测表现调参。
 
-M2 当前链路：合法 MarketSnapshot + 显式 Prediction + EdgeConfig → immutable EdgeEvaluation → BUY_YES / BUY_NO / NO_TRADE candidate。目标兼容性、源/接收时间、可用时间及到期检查先行；拒绝时保留原因、两侧 EV 为 null。合法输入的两侧深度分别按互斥场景计算，保留 liquidity IDs，不真实消费。Prediction 是模型/adapter 的输入契约，p_yes 明确指市场 YES；UP→YES 转换不在 Edge Engine 内隐式发生。
+**M2 = economic edge；M3 = admissibility；M5 = execution reality；M6 = portfolio/risk permission。** M3 不调用 Edge Engine 重算概率/EV，不重新比较方向，只检查所请求的 YES/NO candidate 并原样引用该侧数值。拒绝为正常 NO_TRADE；固定 gate/reason precedence、全部原因和逐 gate audit 持久化。
 
-CostBreakdown 分开保存 observed book/VWAP 与 simulation assumptions。collateral fee 增加 cash cost，shares fee 减少 expected payout 中的 net shares。spread 和 depth cost 是分解诊断，VWAP-based cost 不重复加回二者。M2 额外建立 predictions/edge_evaluations 两表和显式事务迁移，其余后续表未创建。
+M3 只新增 decisions 表。DecisionRepository 通过 M1/M2 各自的读回验证取得可信输入，再执行纯 DecisionPolicy；其中 M2 repository 的历史完整性重算是 M2 的职责，不是 DecisionPolicy 重新定价。禁止跨实验 FK；同 attempt_key 内容冲突拒绝。
+
+M1 市场输入新增可选、带可用时间的 market_status 扩展，使用独立 validator/redaction version；旧 raw 的版本、快照 ID/序列化保持不变。Prediction target 新增可选 source/feed/reference 元数据，旧序列化省略 absent 字段。M3 对缺失状态或未确认来源拒绝，绝不把旧数据补成 OPEN 或假设 Binance 与其他 oracle 等价。语义确认必须由显式研究合同 hash、模型 hash、允许 source/feed/rule/mapping 共同绑定；synthetic demo 的合同仅证明合成设定。
 
 ## Dependency flow
 

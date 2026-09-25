@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 2 已实现，等待作者阶段审阅后再决定 M3**。V3 有 ingestion、Prediction 输入契约、双边 Edge math、六表存储及 synthetic demos；无预测引擎、Decision/Risk、Dashboard、真实 Execution 或交易循环。见 [M2 契约](../architecture/V3_M2_CONTRACT.md)。本阶段完成后停止，不自动进入 M3。
+当前：**Milestone 3 已实现，等待作者阶段审查后再决定 M4**。当前仅有 ingestion、显式 Prediction、Edge math 与 admissibility Decision，七表存储及 synthetic demos。没有订单、成交、仓位、Risk、Dashboard 或交易循环。M2/M3/M5/M6 分别回答经济 edge、候选可接受性、成交现实、组合/风险许可。见 [M3 契约](../architecture/V3_M3_CONTRACT.md)。完成后停止，不自动进入 M4。
 
 | 阶段 | 交付与验收重点 |
 |---|---|

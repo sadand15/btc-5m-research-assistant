@@ -12,8 +12,9 @@ from btc5_v3.encoding import canonical, decimal_text, digest, identifier, timest
 from btc5_v3.market.models import RawMarketEvent
 
 FIELDS = {'market_id','source_at','expiry','market_type','feed','rule_hash','outcome_mapping',
-          'yes_bids','yes_asks','reference_underlying_price','reference_price_at'}
-TEXT = {'market_id','market_type','feed','rule_hash','outcome_mapping'}
+          'yes_bids','yes_asks','reference_underlying_price','reference_price_at',
+          'market_status','market_status_at','market_status_available_at'}
+TEXT = {'market_id','market_type','feed','rule_hash','outcome_mapping','market_status'}
 MAX_PAYLOAD_BYTES = 262144
 MAX_LEVELS = 1000
 
@@ -96,7 +97,9 @@ def raw_event(payload, *, experiment_id, source, received_at, sequence, event_ke
     return RawMarketEvent(digest([experiment_id,source,key]),experiment_id,source,
                           source_at if type(source_at) is int else None,received_at,sequence,
                           market_id if isinstance(market_id,str) and market_id!='[REDACTED]' else None,
-                          encoded,hashlib.sha256(encoded.encode()).hexdigest(),1,redaction,'RECEIVED',key,recorded_at)
+                          encoded,hashlib.sha256(encoded.encode()).hexdigest(),1,redaction,'RECEIVED',key,recorded_at,
+                          'allowlist-m3-status-v1' if any(k in parsed for k in
+                              ('market_status','market_status_at','market_status_available_at')) else 'allowlist-v1')
 
 
 def normalize_levels(rows, *, descending):
