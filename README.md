@@ -1,8 +1,8 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 5 execution simulation.** 已实现延迟后盘口、ASK/BID depth walk、partial entry/exit、费用、split settlement、不可变 ledger 与 early-exit/hold 固定研究比较。仅离线模拟，无真实账户、钱包或订单。见 [M5 报告](docs/research/V3_MILESTONE_5.md) 与 [执行契约](docs/architecture/V3_M5_EXECUTION_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+> **V3 development branch — Milestone 6 risk and portfolio permission.** 已实现 APPROVE/REDUCE/REJECT、原子资金预留、M5 ledger 对账、UTC 日损失/回撤/连亏限制及可回放暂停恢复。仅离线模拟，无真实账户、钱包或订单。见 [M6 报告](docs/research/V3_MILESTONE_6.md) 与 [风险契约](docs/architecture/V3_M6_RISK_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
 
-## V3 M5 quick start
+## V3 M6 quick start
 
 仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 包只用标准库，完整 legacy tests 仍需原 requirements。
 
@@ -17,7 +17,10 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.analytics.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.path.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.execution.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.risk.demo --project-root .
 ```
+
+M6 demo 使用 6 个固定 synthetic cases：正常批准、单笔缩量、预留竞争、部分成交释放余额、日损失暂停但允许已有仓位退出、回撤限制。只写 `runtime/v3/m6-demo.sqlite`、`m6-report.json`、`m6-report.md`。报告包含完整 M3 输入、前后状态、RiskDecision、reservation、M5 ledger 与对账。资金按二元价格上限加费用保守预留，equity 为 cash + 剩余成本，不重复加 reserved cash。固定参数都是研究假设；不推荐仓位或宣称可实盘。
 
 M5 demo 使用 8 个 synthetic markets，输出 160 个完整固定 grid rows（10 个 exit policies、6 个 latency、4 个 size，one-factor-at-a-time）。仅写 `runtime/v3/m5-demo.sqlite`、`m5-report.json`、`m5-report.md`，报告保存每个 intent、fill、partial exit、剩余持仓、settlement 和 ledger。假设费用不是已验证真实费率；所有输出均为 **hypothetical simulated PnL**，无最优策略推荐。
 
@@ -33,7 +36,7 @@ M4 measurement 报告包含 coverage、Brier payout/binary、binary Log Loss、E
 
 Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
 
-层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism**。M5 已实现离线执行模拟；M6 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism → M6 portfolio/risk permission**。M6 已实现；M7 monitoring/dashboard 尚未开始。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 

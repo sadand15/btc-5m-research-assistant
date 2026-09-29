@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 5 已实现，等待审查；停止，不开始 M6**。M4.5 = path evidence；M5 = execution realism；M6 = risk permission。离线模拟后续记录盘口的真实可见 depth、latency、fees、partial entry/exit 和 settlement，输出完整固定研究 grids，不推荐最优策略、不连接真实交易。见 [M5 契约](../architecture/V3_M5_EXECUTION_CONTRACT.md)。
+当前：**Milestone 6 已实现，等待审查；停止，不开始 M7**。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard。已实现原子预留、防止重复占资、M5 ledger 资金对账、UTC 日损失/回撤/连亏限制、可回放数据/provider/manual pause/resume。全部 synthetic/offline，参数固定且不优化；见 [M6 契约](../architecture/V3_M6_RISK_CONTRACT.md) 与 [M6 报告](V3_MILESTONE_6.md)。
 
 | 阶段 | 交付与验收重点 |
 |---|---|

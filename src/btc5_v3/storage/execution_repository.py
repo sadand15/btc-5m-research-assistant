@@ -19,7 +19,7 @@ TABLES={'simulated_orders':('orders','order_id'),'simulated_order_events':('orde
 def migrate_execution(db):
     with db.connection as conn:
         conn.execute('BEGIN IMMEDIATE');version=conn.execute('PRAGMA user_version').fetchone()[0]
-        if version==6:return
+        if version in (6,7):return
         if version!=5:raise ValueError('execution requires M4.5 schema')
         conn.execute('''CREATE TABLE execution_runs (
             id TEXT PRIMARY KEY, experiment_id TEXT NOT NULL REFERENCES experiments(id),

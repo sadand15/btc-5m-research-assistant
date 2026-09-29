@@ -31,7 +31,7 @@ def migrate_m4(db):
     with db.connection as conn:
         conn.execute('BEGIN IMMEDIATE')
         version=conn.execute('PRAGMA user_version').fetchone()[0]
-        if version in (4,5,6):return
+        if version in (4,5,6,7):return
         if version!=3:raise ValueError('M4 requires M3 schema')
         for sql in DDL:conn.execute(sql)
         for table,key in (('resolved_outcomes','id'),('analysis_runs','id'),('analysis_results','analysis_id')):

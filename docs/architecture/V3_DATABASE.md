@@ -1,6 +1,21 @@
-# V3 Database — M1–M4 implementation and future proposal
+# V3 Database — M1–M6 implementation and future proposal
 
-## Current schema 6 — M5
+## Current schema 7 — M6
+
+新增五表，共26表；原 M1–M5 表不改结构或业务语义。迁移由 `RiskRepository` 显式执行，旧 repository 只新增 schema 7 识别。
+
+| 表 | 记录与约束 |
+|---|---|
+| risk_runs | id、experiment_id FK、canonical payload/hash；绑定 code Git SHA、config/hash、created_at/version |
+| risk_events | id、run_id/experiment_id 复合 FK、sequence、request_key、at、kind、inputs/output JSON、previous_hash/event_hash；run 内 sequence/request_key 唯一 |
+| risk_decisions | event/run FK、完整 immutable RiskDecision、payload/hash |
+| capital_reservations | event/run FK、每次不可变 reservation revision、payload/hash；不覆盖状态 |
+| portfolio_snapshots | event/run FK、可重建的 state audit cache、payload/hash；不是资金真源 |
+
+BEGIN IMMEDIATE 在读取资金前串行化批准和预留；M5 回放结果（包括精确 ledger）作为同一风险事务的不可变 output 归档。不会把 standalone M5 的多个 cutoff/policy 反事实记录重复并入资金账户。重放验证输入、完整 M5 输出、权限结果、hash chain、projection 内容与数量；读事务固定 WAL snapshot。所有表 UPDATE/DELETE/REPLACE 拒绝。跨实验原始输入、跨 run 许可、冲突重试、历史现金回写均拒绝。详见 [M6 contract](V3_M6_RISK_CONTRACT.md)。
+
+
+## Prior schema 6 — M5
 
 新增 `execution_runs`、`execution_results` 及 `simulated_orders`、`simulated_order_events`、`simulated_fills`、`simulated_positions`、`simulated_exit_attempts`、`simulated_settlements`、`simulated_ledger_entries`，合计21表。原始输入/config/policy/Git/cutoff/hash 随 run 归档，projection 使用同实验 run FK；业务引用由完整 replay 校验。单事务保存，UPDATE/DELETE/REPLACE 拒绝，重试不重复计费/成交/结算；原始快照不修改。详见 [M5 contract](V3_M5_EXECUTION_CONTRACT.md)。下方保留历史 schema 说明。
 

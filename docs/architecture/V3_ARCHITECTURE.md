@@ -1,6 +1,8 @@
 # V3 Architecture — Milestone 0 design
 
-最新状态：M5 offline execution simulation 已实现。M4.5 path evidence → M5 execution realism → M6 risk permission（未实现）。详见 [M5 执行契约](V3_M5_EXECUTION_CONTRACT.md)。单候选/独立反事实执行归档，使用延迟后的 ASK/BID depth、IOC partial fills、固定因果 early exit、剩余份额结算和双分录守恒。所有物理 liquidity consumption、费用、order/fill/position/settlement 可重放。只有模拟，没有真实账户/钱包/订单，无 portfolio risk 或参数优化。
+最新状态：**M6 portfolio/risk permission 已实现**。M3 candidate → immutable RiskDecision → atomic CapitalReservation → unchanged M5 simulation → M5 ledger reconciliation → replayed PortfolioState。支持 cash/open/pending/market limits、UTC daily-loss latch、drawdown/loss-streak latch、data/provider/manual controls；暂停取消未成交许可，保留已有仓位的 exit/settlement。仅 synthetic/offline，无真实账户、钱包、订单。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard（未开始）。精确口径见 [M6 风险契约](V3_M6_RISK_CONTRACT.md)。下方保留各阶段历史设计，不代表均为当前实现。
+
+M5 阶段保留说明：M5 offline execution simulation 已实现。M4.5 path evidence → M5 execution realism → M6 risk permission（未实现）。详见 [M5 执行契约](V3_M5_EXECUTION_CONTRACT.md)。单候选/独立反事实执行归档，使用延迟后的 ASK/BID depth、IOC partial fills、固定因果 early exit、剩余份额结算和双分录守恒。所有物理 liquidity consumption、费用、order/fill/position/settlement 可重放。只有模拟，没有真实账户/钱包/订单，无 portfolio risk 或参数优化。
 
 M4.5 阶段保留说明：intracycle path research 已实现；M4 probability/edge evidence → M4.5 market path evidence → M5 execution realism。最新精确契约见 [M4.5 Path Contract](V3_M4_5_PATH_CONTRACT.md)。Path analytics 只读取显式原始 snapshot archives，按 received_at/sequence 重建，未来 quote/outcome 仅用于 post-hoc 结果；mid 与 observable bid、all 与 freshness-filtered 群体分开。新增两张 path analysis 表，原始快照不写回派生结果。未实现 M5，未读取 V2 blind performance。
 
