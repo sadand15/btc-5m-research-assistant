@@ -1,6 +1,10 @@
 # V3 Database — M1–M4 implementation and future proposal
 
-## Current schema 5 — M4.5
+## Current schema 6 — M5
+
+新增 `execution_runs`、`execution_results` 及 `simulated_orders`、`simulated_order_events`、`simulated_fills`、`simulated_positions`、`simulated_exit_attempts`、`simulated_settlements`、`simulated_ledger_entries`，合计21表。原始输入/config/policy/Git/cutoff/hash 随 run 归档，projection 使用同实验 run FK；业务引用由完整 replay 校验。单事务保存，UPDATE/DELETE/REPLACE 拒绝，重试不重复计费/成交/结算；原始快照不修改。详见 [M5 contract](V3_M5_EXECUTION_CONTRACT.md)。下方保留历史 schema 说明。
+
+## Prior schema 5 — M4.5
 
 新增 `path_analysis_runs` 与 `path_analysis_results`，合计十二表。前者保存同实验的原始 point/outcome archives、config/hash、input hash、Git SHA、cutoff 和显式 creation metadata；后者保存完整 deterministic report/hash，通过同实验复合外键链接 run。原子写入，UPDATE/DELETE/REPLACE 拒绝，重试保留首次创建元数据，读回重放完整输入核验结果。未向 MarketSnapshot 写入未来派生字段；无 orders/fills/positions。详见 [M4.5 contract](V3_M4_5_PATH_CONTRACT.md)。下方保留此前 schema 设计。
 

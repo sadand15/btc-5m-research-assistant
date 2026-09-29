@@ -27,7 +27,7 @@ def migrate_path(db):
     with db.connection as conn:
         conn.execute('BEGIN IMMEDIATE')
         version=conn.execute('PRAGMA user_version').fetchone()[0]
-        if version==5: return
+        if version in (5,6): return
         if version!=4: raise ValueError('path analytics requires M4 schema')
         for sql in DDL: conn.execute(sql)
         for table,key in (('path_analysis_runs','id'),('path_analysis_results','analysis_id')):

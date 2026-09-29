@@ -1,8 +1,8 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 4.5 intracycle path evidence.** 在 M1–M4 基础上增加周期内 YES/NO、mid/bid 路径研究，保持 missing/stale 与 post-hoc 时间边界。无 execution simulation、订单、策略推荐或阈值优化。见 [M4.5 报告](docs/research/V3_MILESTONE_4_5.md) 与 [路径契约](docs/architecture/V3_M4_5_PATH_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+> **V3 development branch — Milestone 5 execution simulation.** 已实现延迟后盘口、ASK/BID depth walk、partial entry/exit、费用、split settlement、不可变 ledger 与 early-exit/hold 固定研究比较。仅离线模拟，无真实账户、钱包或订单。见 [M5 报告](docs/research/V3_MILESTONE_5.md) 与 [执行契约](docs/architecture/V3_M5_EXECUTION_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
 
-## V3 M4.5 quick start
+## V3 M5 quick start
 
 仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 包只用标准库，完整 legacy tests 仍需原 requirements。
 
@@ -16,19 +16,24 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.decision.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.analytics.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.path.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.execution.demo --project-root .
 ```
+
+M5 demo 使用 8 个 synthetic markets，输出 160 个完整固定 grid rows（10 个 exit policies、6 个 latency、4 个 size，one-factor-at-a-time）。仅写 `runtime/v3/m5-demo.sqlite`、`m5-report.json`、`m5-report.md`，报告保存每个 intent、fill、partial exit、剩余持仓、settlement 和 ledger。假设费用不是已验证真实费率；所有输出均为 **hypothetical simulated PnL**，无最优策略推荐。
+
+Entry/exit 只使用满足 latency 的后续 fresh OPEN book，M3 拒绝不产生 intent。退出用 BID，不用 mid；部分退出后剩余 shares 继续结算。比较 early exit 与同一实际入场的 hold，失败、stale、partial、pending 均保留，不能只挑成功退出。无成交的终止路径为零现金结果；未结算 open position 的 PnL 为 null。
 
 M4.5 path demo 使用 8 个 synthetic markets，覆盖 reversal、continuation、whipsaw、temporary rebound、split、宽 spread 和 stale peak。仅写 `runtime/v3/m4-5-demo.sqlite`、`m4-5-report.json`、`m4-5-report.md`。报告同时提供 mid/bid 全部固定 rebound grids 和 TTE/质量分层，观测缺口不插值。Bid 只是可观察价格，不保证成交；这些合成结果不能证明真实市场有可重复规律。没有合法 BTC series 时 shock conditioning 为 unavailable。
 
 各 CLI 要求 clean commit，以实际 Git SHA 标识研究。M4 demo 使用 64 个独立 synthetic markets，包含校准/过度自信概率、YES/NO、不同 TTE、stale 拒绝和 split；只写本 worktree 的 runtime/v3/m4-demo.sqlite、m4-report.json、m4-report.md。同版本重跑幂等，不访问 V2 数据或真实平台。
 
-报告包含 coverage、Brier payout/binary、binary Log Loss、ECE/MCE/reliability bins、signed edge buckets、YES/NO/combined、Spearman、TTE/UTC day/model groups、完整 threshold/cost grids。原始概率保留；split 单独计数，不进入 binary Log Loss/ECE。收益全部是 **decision-time hypothetical realized value**，不是 execution PnL。Profit factor/Sharpe 保持 unavailable。
+M4 measurement 报告包含 coverage、Brier payout/binary、binary Log Loss、ECE/MCE/reliability bins、signed edge buckets、YES/NO/combined、Spearman、TTE/UTC day/model groups、完整 threshold/cost grids。原始概率保留；split 单独计数，不进入 binary Log Loss/ECE。M4 的收益全部是 **decision-time hypothetical realized value**，不是 execution PnL。Profit factor/Sharpe 保持 unavailable。
 
 **sensitivity analysis ≠ optimization**：固定 thresholds 2/3/5/7/10/15%，cost multipliers 1/1.5/2/3。成本压力固定使用 strict edge > 1% 的研究条件；只放大费用和 latency/extra 假设，不再扣 spread/depth。M3 拒绝永不被敏感性分析复活，不重选 side。报告不推荐参数。
 
 Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
 
-层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism**。M5 与 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism**。M5 已实现离线执行模拟；M6 Risk/portfolio 尚未实现。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 
