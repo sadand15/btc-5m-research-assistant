@@ -1,4 +1,11 @@
-# V3 Database — M1–M6 implementation and future proposal
+# V3 Database — M1–M7 implementation and future proposal
+
+## M7 read-only views — no schema change
+
+M7 保持 schema 7 / 26 tables，不新增表、不迁移。只允许读取 `experiments`、`risk_runs`、`risk_events`、`risk_decisions`、`capital_reservations`、`portfolio_snapshots`；M1–M3 原始证据和 M5 ledger 从显式 M6 archive 读取。其他表（包括任何 blind table）由 SQLite authorizer 拒绝访问。无通用 SQL API。
+
+`mode=ro` + `query_only=ON` + consistent read transaction 保留 WAL 可见性。仅支持明确 synthetic contract，按 run/as-of 限定；最多 5000 events、单 payload 4 MiB、整体 payload 64 MiB，预算截断标为 INCOMPLETE。查询固定六次 SELECT，不按行追加查询。完整性核验不执行 domain replay，不写回修复；缺失文件不创建。详见 [M7 contract](V3_M7_MONITORING_CONTRACT.md)。
+
 
 ## Current schema 7 — M6
 

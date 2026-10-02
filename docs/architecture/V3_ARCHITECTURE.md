@@ -1,6 +1,8 @@
 # V3 Architecture — Milestone 0 design
 
-最新状态：**M6 portfolio/risk permission 已实现**。M3 candidate → immutable RiskDecision → atomic CapitalReservation → unchanged M5 simulation → M5 ledger reconciliation → replayed PortfolioState。支持 cash/open/pending/market limits、UTC daily-loss latch、drawdown/loss-streak latch、data/provider/manual controls；暂停取消未成交许可，保留已有仓位的 exit/settlement。仅 synthetic/offline，无真实账户、钱包、订单。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard（未开始）。精确口径见 [M6 风险契约](V3_M6_RISK_CONTRACT.md)。下方保留各阶段历史设计，不代表均为当前实现。
+最新状态：**M7 monitoring/observability 已实现**。独立 Streamlit UI → immutable MonitoringView → MonitoringService → SQLite read-only allowlist；11 个页面只展示显式 M6 synthetic run 的已记录证据。六表只读事务、hash chain/projection 核验、as-of 因果过滤、账本算术对账、脱敏诊断；刷新不调用 M5/M6 引擎。未知值明确 UNKNOWN，损坏依赖项不可用。Schema 仍为 7；M1–M6 源码完全未改。详见 [M7 监控契约](V3_M7_MONITORING_CONTRACT.md)。M8 未开始。
+
+M6 阶段保留说明：**M6 portfolio/risk permission 已实现**。M3 candidate → immutable RiskDecision → atomic CapitalReservation → unchanged M5 simulation → M5 ledger reconciliation → replayed PortfolioState。支持 cash/open/pending/market limits、UTC daily-loss latch、drawdown/loss-streak latch、data/provider/manual controls；暂停取消未成交许可，保留已有仓位的 exit/settlement。仅 synthetic/offline，无真实账户、钱包、订单。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard（未开始）。精确口径见 [M6 风险契约](V3_M6_RISK_CONTRACT.md)。下方保留各阶段历史设计，不代表均为当前实现。
 
 M5 阶段保留说明：M5 offline execution simulation 已实现。M4.5 path evidence → M5 execution realism → M6 risk permission（未实现）。详见 [M5 执行契约](V3_M5_EXECUTION_CONTRACT.md)。单候选/独立反事实执行归档，使用延迟后的 ASK/BID depth、IOC partial fills、固定因果 early exit、剩余份额结算和双分录守恒。所有物理 liquidity consumption、费用、order/fill/position/settlement 可重放。只有模拟，没有真实账户/钱包/订单，无 portfolio risk 或参数优化。
 

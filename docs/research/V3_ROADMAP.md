@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 6 已实现，等待审查；停止，不开始 M7**。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard。已实现原子预留、防止重复占资、M5 ledger 资金对账、UTC 日损失/回撤/连亏限制、可回放数据/provider/manual pause/resume。全部 synthetic/offline，参数固定且不优化；见 [M6 契约](../architecture/V3_M6_RISK_CONTRACT.md) 与 [M6 报告](V3_MILESTONE_6.md)。
+当前：**Milestone 7 已实现，等待审查；停止，不开始 M8**。M5 = execution simulation；M6 = portfolio/risk permission；M7 = monitoring/observability。11 个只读页面、确定性 as-of、账本对账、异常降级、来源追踪及合成 demo；无 live probe、MTM 或真实执行。见 [M7 契约](../architecture/V3_M7_MONITORING_CONTRACT.md) 与 [M7 报告](V3_MILESTONE_7.md)。
 
 | 阶段 | 交付与验收重点 |
 |---|---|
@@ -12,7 +12,7 @@
 | M4.5 | 周期内价格路径、mid/bid 分离、missing/stale、固定 rebound/TTE 分层、temporary rebound 与 settlement；synthetic-only 因果与重放回归，无执行或优化 |
 | M5 | 已实现延迟后 book、depth walk、partial fills/early exit、IOC余量取消、费用/舍入、stale execution、physical lot budget、settlement/ledger；完整政策/latency/size grids，因果/守恒/幂等验证 |
 | M6 | 单笔 stake/敞口预留、UTC daily loss、drawdown、连续亏损、kill switch；重启幂等、断线、日界线、暂停恢复测试 |
-| M7 | 独立 V3 dashboard：Overview / Edge / TTE / Execution / Risk；显示样本数、来源、假设、空值与 mock 标识；UI 集成测试 |
+| M7 | 已实现独立只读 Overview / Health / Risk / Permissions / Reservations / Positions / Executions / Ledger / Timeline / Diagnostics / Provenance；因果/只读/脱敏/损坏诊断/刷新与 UI 测试 |
 | M8 | Dockerfile、compose、secret 注入、持久卷、healthcheck、restart、结构化日志；容器启动/故障/恢复验收，再确定云主机部署 |
 | M9 | 只有严格 OOS/forward 证据支持稳定 edge 后才讨论 meta-model；不是默认待实现功能 |
 

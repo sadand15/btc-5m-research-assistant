@@ -1,10 +1,10 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 6 risk and portfolio permission.** 已实现 APPROVE/REDUCE/REJECT、原子资金预留、M5 ledger 对账、UTC 日损失/回撤/连亏限制及可回放暂停恢复。仅离线模拟，无真实账户、钱包或订单。见 [M6 报告](docs/research/V3_MILESTONE_6.md) 与 [风险契约](docs/architecture/V3_M6_RISK_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+> **V3 development branch — Milestone 7 read-only monitoring.** 独立 Streamlit 只读监控界面提供资金、风险、许可、预留、持仓、执行、账本、时间线及来源追踪。仅显示明确 synthetic 归档，不探测真实平台、不改变 M1–M6 行为。见 [M7 报告](docs/research/V3_MILESTONE_7.md) 与 [监控契约](docs/architecture/V3_M7_MONITORING_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
 
-## V3 M6 quick start
+## V3 M7 quick start
 
-仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 包只用标准库，完整 legacy tests 仍需原 requirements。
+仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 domain 包只用标准库；M7 UI 使用现有 Streamlit，完整测试和 UI 需要 requirements。
 
 ```powershell
 python -m venv .venv
@@ -18,7 +18,11 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.path.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.execution.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.risk.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.monitoring.demo --project-root .
+.\.venv\Scripts\python.exe -m streamlit run src/btc5_v3/monitoring/dashboard.py --server.address 127.0.0.1 --server.port 8503 -- --project-root .
 ```
+
+M7 页面打开 `http://127.0.0.1:8503`。demo 明确生成六组合成归档及 JSON/Markdown 报告，均位于被忽略的 `runtime/v3/m7-dashboard/`；dashboard 本身不创建数据库、不迁移、不运行风险/执行引擎。启动前先运行 demo；缺失数据库显示 UNAVAILABLE。11 个只读页面支持 as-of、来源追踪、筛选、分页及脱敏导出。健康仅来自历史证据，没有 live probe；equity 使用 M6 成本口径，不是 MTM。未知来源/未记录的 M4/M4.5 分析不伪造数据。
 
 M6 demo 使用 6 个固定 synthetic cases：正常批准、单笔缩量、预留竞争、部分成交释放余额、日损失暂停但允许已有仓位退出、回撤限制。只写 `runtime/v3/m6-demo.sqlite`、`m6-report.json`、`m6-report.md`。报告包含完整 M3 输入、前后状态、RiskDecision、reservation、M5 ledger 与对账。资金按二元价格上限加费用保守预留，equity 为 cash + 剩余成本，不重复加 reserved cash。固定参数都是研究假设；不推荐仓位或宣称可实盘。
 
@@ -36,7 +40,7 @@ M4 measurement 报告包含 coverage、Brier payout/binary、binary Log Loss、E
 
 Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
 
-层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism → M6 portfolio/risk permission**。M6 已实现；M7 monitoring/dashboard 尚未开始。无训练、拟合、参数优化、真实成交或 live trading claim。
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism → M6 portfolio/risk permission**。M7 monitoring/observability 已实现；停止，不开始 M8。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 
