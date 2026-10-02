@@ -1,6 +1,8 @@
 # V3 Architecture — Milestone 0 design
 
-最新状态：**M7 monitoring/observability 已实现**。独立 Streamlit UI → immutable MonitoringView → MonitoringService → SQLite read-only allowlist；11 个页面只展示显式 M6 synthetic run 的已记录证据。六表只读事务、hash chain/projection 核验、as-of 因果过滤、账本算术对账、脱敏诊断；刷新不调用 M5/M6 引擎。未知值明确 UNKNOWN，损坏依赖项不可用。Schema 仍为 7；M1–M6 源码完全未改。详见 [M7 监控契约](V3_M7_MONITORING_CONTRACT.md)。M8 未开始。
+最新状态：**M8 data quality / frozen replay / research robustness 已实现**。显式 manifest → role/hash checks → causal quality Gate → unchanged M1–M6 functions → baseline VALIDATION 或 DEVELOPMENT research variants → deterministic redacted reports。M7 UI 源码不变，M8 不迁移 schema 7。固定 grid、spread ablation、market-cluster block bootstrap、M4 calibration drift 和 cohort/regime matrix；未知真实 OOS evidence 明确不可用。详见 [M8 contract](V3_M8_RESEARCH_VALIDATION_CONTRACT.md)。本阶段替代旧部署提案；M9 未开始。
+
+M7 阶段保留说明：**M7 monitoring/observability 已实现**。独立 Streamlit UI → immutable MonitoringView → MonitoringService → SQLite read-only allowlist；11 个页面只展示显式 M6 synthetic run 的已记录证据。六表只读事务、hash chain/projection 核验、as-of 因果过滤、账本算术对账、脱敏诊断；刷新不调用 M5/M6 引擎。未知值明确 UNKNOWN，损坏依赖项不可用。Schema 仍为 7；M1–M6 源码完全未改。详见 [M7 监控契约](V3_M7_MONITORING_CONTRACT.md)。M8 未开始。
 
 M6 阶段保留说明：**M6 portfolio/risk permission 已实现**。M3 candidate → immutable RiskDecision → atomic CapitalReservation → unchanged M5 simulation → M5 ledger reconciliation → replayed PortfolioState。支持 cash/open/pending/market limits、UTC daily-loss latch、drawdown/loss-streak latch、data/provider/manual controls；暂停取消未成交许可，保留已有仓位的 exit/settlement。仅 synthetic/offline，无真实账户、钱包、订单。M5 = execution realism；M6 = portfolio/risk permission；M7 = monitoring/dashboard（未开始）。精确口径见 [M6 风险契约](V3_M6_RISK_CONTRACT.md)。下方保留各阶段历史设计，不代表均为当前实现。
 

@@ -1,4 +1,11 @@
-# V3 Database — M1–M7 implementation and future proposal
+# V3 Database — M1–M8 implementation and future proposal
+
+## M8 research inputs and artifacts — existing schema unchanged
+
+M8 不修改 schema 7 或任何已有表。显式 demo writer 只在 `runtime/v3/m8/synthetic-inputs.sqlite` 建立 `m8_dataset_manifests(id, metadata_json)` 和 `m8_dataset_records(dataset_id, records_json)`，这是隔离 fixture catalog，不属于 V3 生产 schema。已有 identity 若内容不同则报冲突，不覆盖。
+
+M8 reader 使用 SQLite mode=ro/query_only/authorizer，只允许这两表；先按显式 dataset_id 读取 manifest，检查 DEVELOPMENT/VALIDATION 角色后才读取对应 payload。BLIND 在访问载荷前拒绝；其他表即使存在也不能读取。SHA256/canonical JSON、时间范围、重复 identity/order、最多 2000 records、16 MiB payload 上限受检。manifest 的角色是数据提供者的明确声明，不是密码学证明此前从未参与开发。导出报告独立写入 ignored runtime/v3/m8，不回写 source/ledger/snapshot。
+
 
 ## M7 read-only views — no schema change
 

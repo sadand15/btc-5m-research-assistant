@@ -1,6 +1,6 @@
 # V3 milestones and research protocol
 
-当前：**Milestone 7 已实现，等待审查；停止，不开始 M8**。M5 = execution simulation；M6 = portfolio/risk permission；M7 = monitoring/observability。11 个只读页面、确定性 as-of、账本对账、异常降级、来源追踪及合成 demo；无 live probe、MTM 或真实执行。见 [M7 契约](../architecture/V3_M7_MONITORING_CONTRACT.md) 与 [M7 报告](V3_MILESTONE_7.md)。
+当前：**Milestone 8 已实现，等待审查；停止，不开始 M9**。用户批准的 M8 范围为 Data Quality + Validation/Replay + Research Robustness，替代此前的部署提案。只做合成验收及只读源数据研究，不部署、不优化、不读取 blind performance。见 [M8 契约](../architecture/V3_M8_RESEARCH_VALIDATION_CONTRACT.md) 与 [M8 报告](V3_MILESTONE_8.md)。
 
 | 阶段 | 交付与验收重点 |
 |---|---|
@@ -13,7 +13,7 @@
 | M5 | 已实现延迟后 book、depth walk、partial fills/early exit、IOC余量取消、费用/舍入、stale execution、physical lot budget、settlement/ledger；完整政策/latency/size grids，因果/守恒/幂等验证 |
 | M6 | 单笔 stake/敞口预留、UTC daily loss、drawdown、连续亏损、kill switch；重启幂等、断线、日界线、暂停恢复测试 |
 | M7 | 已实现独立只读 Overview / Health / Risk / Permissions / Reservations / Positions / Executions / Ledger / Timeline / Diagnostics / Provenance；因果/只读/脱敏/损坏诊断/刷新与 UI 测试 |
-| M8 | Dockerfile、compose、secret 注入、持久卷、healthcheck、restart、结构化日志；容器启动/故障/恢复验收，再确定云主机部署 |
+| M8 | 已实现明确 dataset roles、quality Gate、冻结因果 replay、regime 分层、固定 sensitivity/ablation、市场簇 bootstrap/CI、集中度与 M4 校准漂移；12 个 synthetic cases，独立报告及只读隔离 |
 | M9 | 只有严格 OOS/forward 证据支持稳定 edge 后才讨论 meta-model；不是默认待实现功能 |
 
 M4 交付描述性 edge/calibration、候选覆盖率和明确 hypothetical 的 decision-time realized value；没有 M5 延迟成交证据时 actual execution PnL 不存在，profit factor/Sharpe 保持 null。M5 后补齐同一预注册分析，不提前用旧 mock PnL 假装新执行结果。M3 之前/期间未完成风险与执行链时，不启动自动模拟开仓循环。
