@@ -33,5 +33,11 @@ jobs:
       - run: python -m btc5_v3.validation.demo --project-root .
       - run: python -m btc5_v3.robustness.demo --project-root .
       - run: python -m btc5_v3.m8.demo --project-root .
+      - run: python -m btc5_v3.prospective.demo --project-root .
+      - name: Prospective image build and offline smoke
+        if: runner.os == 'Linux'
+        run: |
+          docker build --build-arg COLLECTOR_SHA=${{ github.sha }} -f deployment/prospective/Dockerfile -t btc5-prospective-ci .
+          docker run --rm --network none btc5-prospective-ci python -m btc5_v3.prospective.demo --project-root /app
       - run: python scripts/security_scan.py index
       - run: python scripts/security_scan.py history

@@ -1,8 +1,10 @@
 # BTC 5M Research Assistant
 
-> **V3 development branch — Milestone 8 research validation.** 实现数据质量 Gate、显式数据角色、冻结 M1–M7 回放、固定敏感性/消融、市场簇 bootstrap、集中度和校准漂移。仅合成研究验收，无真实外样本结论，不选择或替换基线。见 [M8 报告](docs/research/V3_MILESTONE_8.md) 与 [研究契约](docs/architecture/V3_M8_RESEARCH_VALIDATION_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+> **V3 development branch — Milestone 9 prospective evidence infrastructure.** 新增固定未来窗口、分段追加采集、heartbeat/gap ledger、封存与只读 M8 candidate adapter。尚未创建真实 study；不代表 OOS 或盈利证据。见 [M9 runbook](PROSPECTIVE_COLLECTION.md)、[M9 报告](docs/research/V3_MILESTONE_9.md) 和 [契约](docs/architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md)。
 
-## V3 M8 quick start
+M8 research validation： 实现数据质量 Gate、显式数据角色、冻结 M1–M7 回放、固定敏感性/消融、市场簇 bootstrap、集中度和校准漂移。仅合成研究验收，无真实外样本结论，不选择或替换基线。见 [M8 报告](docs/research/V3_MILESTONE_8.md) 与 [研究契约](docs/architecture/V3_M8_RESEARCH_VALIDATION_CONTRACT.md)。下方 V2 文档仍描述冻结发布。
+
+## V3 M8 / M9 quick start
 
 仅在独立 v3-dev worktree 或新 clone 中执行，不切换部署 V2 的原目录。V3 domain 包只用标准库；M7 UI 使用现有 Streamlit，完整测试和 UI 需要 requirements。
 
@@ -20,6 +22,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m btc5_v3.risk.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.monitoring.demo --project-root .
 .\.venv\Scripts\python.exe -m btc5_v3.m8.demo --project-root .
+.\.venv\Scripts\python.exe -m btc5_v3.prospective.demo --project-root .
 .\.venv\Scripts\python.exe -m streamlit run src/btc5_v3/monitoring/dashboard.py --server.address 127.0.0.1 --server.port 8503 -- --project-root .
 ```
 
@@ -43,7 +46,7 @@ M4 measurement 报告包含 coverage、Brier payout/binary、binary Log Loss、E
 
 Analytics 只分析调用方明确提供的同一 experiment 归档，不静默扫描数据库或跨 experiment 合并。覆盖率分母限于该归档，不宣称覆盖所有实际采集；输入完整性须由外部采样证据支持。归档保存原 Prediction/Snapshot/Edge/Decision JSON 与 hash，结果可重放。
 
-层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism → M6 portfolio/risk permission**。M8 data quality/validation/robustness 已实现；停止，不开始 M9。无训练、拟合、参数优化、真实成交或 live trading claim。
+层次为 **M1 trustworthy data → M2 economic edge → M3 admissibility → M4 probability/edge evidence → M4.5 intracycle path evidence → M5 execution realism → M6 portfolio/risk permission**。M8 data quality/validation/robustness 已实现；M9 evidence infrastructure 已增加；停止，不开始 M10。无训练、拟合、参数优化、真实成交或 live trading claim。
 
 ## Overview
 

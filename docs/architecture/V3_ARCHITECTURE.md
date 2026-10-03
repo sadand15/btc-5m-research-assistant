@@ -120,3 +120,10 @@ M5 第一版计划为受最大价格偏离约束的 depth walk，允许 partial 
 ## Unverified assumptions
 
 真实费用口径和舍入、延迟分布、可消费深度、报价丢失、参考价格一致性、split 编码及出现率、模型对结算目标的校准、样本独立性均需后续证据。M0 不声称存在可交易 edge，不读取 V2 当前收益来支持这些假设。
+
+
+## M9 prospective evidence infrastructure
+
+M9 adds an isolated `btc5_v3.prospective` pipeline: immutable future-window manifest → append-only per-hour journals → atomic chained segments → verified sealed dataset → explicit M8 validation candidate. Independent heartbeats and preserved gap ledgers distinguish source failures from collector silence. Source/config/collector identities are checked against approved M8; M1–M8 domain behavior is unchanged. Real price-only archives remain NOT_REPLAY_READY when required prediction/settlement bindings are absent. No analysis during collection, no real study launched, no M10.
+
+See [M9 contract](../architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md), [M9 review](../research/V3_MILESTONE_9.md), and [runbook](../../PROSPECTIVE_COLLECTION.md). Journals, segments, registry and sealed root live only under `runtime/v3/prospective/<study>/`; no legacy DB migration.

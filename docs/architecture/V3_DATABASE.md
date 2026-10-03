@@ -128,3 +128,10 @@ M1 使用 VALID / INVALID，而不是提案中的 ACCEPTED / REJECTED；每个�
 NO_TRADE 保留 raw/net edge 和拒绝 gate，支持阈值敏感性。但如果当时没有录到延迟后盘口或结算，只能比较候选覆盖率，不能凭信号时 mid 补造 counterfactual PnL。不同阈值需按时间重新模拟风险预留及资金路径，不能简单过滤原 fills。
 
 完整数据及完整输入 artifact 才能保证 replay；哈希只能验证身份，不能替代数据保存。数据留在私有持久卷，Git 只保留 schema、合成 fixture、配置模板和脱敏摘要。
+
+
+## M9 prospective evidence infrastructure
+
+M9 adds an isolated `btc5_v3.prospective` pipeline: immutable future-window manifest → append-only per-hour journals → atomic chained segments → verified sealed dataset → explicit M8 validation candidate. Independent heartbeats and preserved gap ledgers distinguish source failures from collector silence. Source/config/collector identities are checked against approved M8; M1–M8 domain behavior is unchanged. Real price-only archives remain NOT_REPLAY_READY when required prediction/settlement bindings are absent. No analysis during collection, no real study launched, no M10.
+
+See [M9 contract](../architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md), [M9 review](../research/V3_MILESTONE_9.md), and [runbook](../../PROSPECTIVE_COLLECTION.md). Journals, segments, registry and sealed root live only under `runtime/v3/prospective/<study>/`; no legacy DB migration.

@@ -39,3 +39,10 @@ M4 交付描述性 edge/calibration、候选覆盖率和明确 hypothetical 的 
 每阶段：实现最小范围 → 全套 pytest（旧测试继续通过）→ 财务/因果回归 → V2 哈希保护核验 → README/docs → secrets scan → 一个清晰 commit → 阶段报告并停止。报告列新增文件、设计决定、风险、未验证假设、作者应读代码和实际检查结果。
 
 研究结果需保存 experiment_id、Git SHA、模型/数据/特征/配置哈希、日期范围、seed、依赖环境、数据可用时间及全部费用/延迟/成交假设。同一输入重放应产生相同业务事件与结果（wall-clock recorded_at 单独处理），失败也记录，不悄悄删掉实验。
+
+
+## M9 prospective evidence infrastructure
+
+M9 adds an isolated `btc5_v3.prospective` pipeline: immutable future-window manifest → append-only per-hour journals → atomic chained segments → verified sealed dataset → explicit M8 validation candidate. Independent heartbeats and preserved gap ledgers distinguish source failures from collector silence. Source/config/collector identities are checked against approved M8; M1–M8 domain behavior is unchanged. Real price-only archives remain NOT_REPLAY_READY when required prediction/settlement bindings are absent. No analysis during collection, no real study launched, no M10.
+
+See [M9 contract](../architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md), [M9 review](../research/V3_MILESTONE_9.md), and [runbook](../../PROSPECTIVE_COLLECTION.md). Journals, segments, registry and sealed root live only under `runtime/v3/prospective/<study>/`; no legacy DB migration.

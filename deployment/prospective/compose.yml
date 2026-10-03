@@ -1,0 +1,33 @@
+services:
+  collector:
+    image: btc5-prospective:${COLLECTOR_SHA:?set exact clean collector commit}
+    build:
+      context: ../..
+      dockerfile: deployment/prospective/Dockerfile
+      args:
+        COLLECTOR_SHA: ${COLLECTOR_SHA}
+    environment:
+      TZ: UTC
+      PREDICTFUN_API_KEY: ${PREDICTFUN_API_KEY:-}
+    command: [python, -m, btc5_v3.prospective, --project-root, /app, --study, '${STUDY_ID:?set existing study id}', collect]
+    volumes:
+      - evidence:/app/runtime
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, python, -m, btc5_v3.prospective, --project-root, /app, --study, '${STUDY_ID}', health]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+volumes:
+  evidence:

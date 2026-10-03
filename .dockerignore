@@ -1,0 +1,15 @@
+*
+!src/
+!src/**
+!docs/
+!docs/architecture/
+!docs/architecture/**
+!btc5/
+!btc5/__init__.py
+!btc5/predictfun.py
+!deployment/
+!deployment/prospective/
+!deployment/prospective/**
+**/__pycache__
+**/*.pyc
+**/.env*
