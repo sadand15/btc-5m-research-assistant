@@ -46,3 +46,16 @@ M4 交付描述性 edge/calibration、候选覆盖率和明确 hypothetical 的 
 M9 adds an isolated `btc5_v3.prospective` pipeline: immutable future-window manifest → append-only per-hour journals → atomic chained segments → verified sealed dataset → explicit M8 validation candidate. Independent heartbeats and preserved gap ledgers distinguish source failures from collector silence. Source/config/collector identities are checked against approved M8; M1–M8 domain behavior is unchanged. Real price-only archives remain NOT_REPLAY_READY when required prediction/settlement bindings are absent. No analysis during collection, no real study launched, no M10.
 
 See [M9 contract](../architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md), [M9 review](../research/V3_MILESTONE_9.md), and [runbook](../../PROSPECTIVE_COLLECTION.md). Journals, segments, registry and sealed root live only under `runtime/v3/prospective/<study>/`; no legacy DB migration.
+
+## M10 isolated scaffolding
+
+Independent development from frozen M9, with no deployment changes or partial
+prospective data access. `research_adapter` distinguishes verified sealed
+synthetic candidates from replay readiness; missing bindings stay NOT_READY.
+`research_assistant` provides pure offline UP/DOWN/WAIT labels with explicit
+probability, calibration, freshness, spread, liquidity and TTE gates.
+It does not produce orders or real inference. Final real-world adaptation remains
+deferred until the original window ends and end/seal/verify/adapter completes.
+See [M10 contract](../architecture/V3_M10_SCAFFOLD_CONTRACT.md) and
+[scaffold report](../research/V3_M10_SCAFFOLD.md). Earlier M9 statements describe
+that milestone's development-time state, not a current deployment health claim.
