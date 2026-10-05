@@ -89,3 +89,14 @@ computed. After the existing fixed window naturally ends, its operational
 `end -> seal -> verify -> adapter` must finish before discussing final real
 data suitability. This code does not perform those operations or inspect
 their current status. It does not automatically promote a sealed dataset.
+
+## Phase 2 authorized sealed binding audit
+
+The Phase 1 restrictions above remain true for `inspect_synthetic_sealed`.
+A separate `audit_sealed` entry now permits explicitly authorized REALTIME
+sealed evidence, pinned by dataset root, collector, dataset and approved
+baseline. It verifies unchanged M9 integrity and source bytes and returns only
+structural field counts, fixed diagnostics and NOT_READY. It does not convert
+records, invoke replay or infer prediction/outcome. See the
+[Phase 2 report](../research/M10_FINAL_REPORT.md) and
+[binding matrix](../research/M10_BINDING_MATRIX.md). No collection changes.

@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M10 Phase 2：已完成真实封存 binding audit。** `prospective-001` 根哈希已只读核验；预测、结算及部分状态/目标绑定缺失，保持 **NOT_READY**。见 [Final Report](docs/research/M10_FINAL_REPORT.md)、[逐字段矩阵](docs/research/M10_BINDING_MATRIX.md) 和 [M9.1 最小 schema delta](docs/architecture/V3_M9_1_MINIMAL_SCHEMA_DELTA.md)。未运行真实 replay 或启动第二轮采集。
+
 > **Isolated M10 scaffolding branch.** 提前开发封存数据 eligibility/readiness 契约和纯离线研究助手（UP / DOWN / WAIT）。仅 synthetic 测试，不连接正在运行的 collector、不读取部分真实数据。真实 adapter 保持 NOT_READY，详见 [M10 契约](docs/architecture/V3_M10_SCAFFOLD_CONTRACT.md) 与 [阶段报告](docs/research/V3_M10_SCAFFOLD.md)。下方 M9 说明保留该阶段开发时的历史状态，不代表当前 VPS 运行状态。
 
 > **V3 development branch — Milestone 9 prospective evidence infrastructure.** 新增固定未来窗口、分段追加采集、heartbeat/gap ledger、封存与只读 M8 candidate adapter。尚未创建真实 study；不代表 OOS 或盈利证据。见 [M9 runbook](PROSPECTIVE_COLLECTION.md)、[M9 报告](docs/research/V3_MILESTONE_9.md) 和 [契约](docs/architecture/V3_M9_PROSPECTIVE_EVIDENCE_CONTRACT.md)。

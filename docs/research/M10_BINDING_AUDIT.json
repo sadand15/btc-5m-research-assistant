@@ -1,0 +1,88 @@
+{
+  "baseline_git_sha": "4dd8c798cac479ddd411cb69a7901fda6e0f8136",
+  "blockers": [
+    "EXPLICIT_PREDICTION_BINDING_REQUIRED",
+    "SETTLEMENT_BINDING_REQUIRED",
+    "REAL_M8_SEMANTICS_UNSUPPORTED",
+    "CAUSAL_MARKET_STATUS_AND_HEALTH_REQUIRED"
+  ],
+  "collection_end": 1791201900000,
+  "collection_start": 1791115500000,
+  "collector_git_sha": "265d6dd7f5f53baa98a8dbb3e45331e1245891bf",
+  "dataset_id": "prospective-001-validation",
+  "dataset_root_hash": "f8f6752c1afd349f39fef5cced0d374fc60444a9fa8b5547c9372fe26b9c9c95",
+  "evidence_bytes_unchanged": true,
+  "evidence_mode": "PROSPECTIVE",
+  "field_presence": {
+    "cycle_id": 3250,
+    "event_key": 3250,
+    "identity_hash": 3250,
+    "market_id": 3250,
+    "payload.asks": 3250,
+    "payload.bids": 3250,
+    "payload.condition_id": 0,
+    "payload.feed": 3250,
+    "payload.health": 0,
+    "payload.market_end": 3250,
+    "payload.market_start": 3250,
+    "payload.market_status": 0,
+    "payload.market_status_at": 0,
+    "payload.market_status_available_at": 0,
+    "payload.no_asks": 0,
+    "payload.no_bids": 0,
+    "payload.no_token_id": 0,
+    "payload.outcome": 0,
+    "payload.prediction": 0,
+    "payload.price": 0,
+    "payload.quantity": 0,
+    "payload.quote_type": 3250,
+    "payload.reference_price_at": 0,
+    "payload.reference_underlying_price": 0,
+    "payload.rule_hash": 3250,
+    "payload.settlement": 0,
+    "payload.source_status": 0,
+    "payload.symbol": 3250,
+    "payload.yes_token_id": 0,
+    "processed_at": 3250,
+    "quality": 3250,
+    "received_at": 3250,
+    "source": 3250,
+    "source_at": 3250
+  },
+  "heartbeat_count": 2885,
+  "heartbeat_fields": {
+    "baseline_valid": 2885,
+    "clock_offset": 2885,
+    "last_received_at": 2874,
+    "source_health": 2885,
+    "storage": 2885
+  },
+  "limitations": [
+    "FIELD_PRESENCE_IS_NOT_SEMANTIC_VALIDITY",
+    "NO_PERFORMANCE_OR_REPLAY",
+    "NO_OUTCOME_INFERENCE"
+  ],
+  "observations": 3250,
+  "origin": "REALTIME",
+  "profile_checks": {
+    "chainlink_declared": true,
+    "cycle_300000": true,
+    "description_hash_present": true,
+    "yes_is_up": true
+  },
+  "readiness": "NOT_READY",
+  "replay_allowed": false,
+  "role": "VALIDATION",
+  "schema": "m10-binding-audit-v1",
+  "structural_issues": {
+    "BOOK_REQUIRES_REJECTION_OR_REVIEW": 254
+  },
+  "study_id": "prospective-001",
+  "verification": {
+    "last_segment_hash": "584a054191c98013028815b0e67f076f5467f95d4fc19f1c6282cb89d1a892f1",
+    "manifest_hash": "747ee0f9ffa981033a5661560e36f8ba53a132c078f773432e5c631060fdf21a",
+    "sealed": true,
+    "segments": 25,
+    "valid": true
+  }
+}
