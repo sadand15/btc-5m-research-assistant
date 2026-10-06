@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "scope": "CONTRACT_AUDIT_NOT_STUDY",
+  "audit_date": "2026-10-06",
+  "capture_status": "NOT_CAPTURED_NO_LOCAL_CREDENTIAL",
+  "credential_sources_checked": ["process_environment"],
+  "authenticated_requests_sent": 0,
+  "raw_response_fixtures": [],
+  "metadata_verified": false,
+  "final_outcome_verified": false,
+  "rate_limit_headers_verified": false,
+  "readiness": "NOT_READY"
+}
