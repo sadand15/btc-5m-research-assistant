@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M9.1 binding collection — synthetic 验证阶段。** 新增前瞻 Prediction/BTCReference/MarketState/Settlement 绑定、结构拒绝、固定结算跟踪窗口及 M10 synthetic adapter。真实第二轮尚未启动，REALTIME 创建保持禁用。见 [交付报告](docs/research/V3_M9_1_BINDING_COLLECTION.md) 和 [契约](docs/architecture/V3_M9_1_BINDING_COLLECTION_CONTRACT.md)。
+
 > **M10 Phase 2：已完成真实封存 binding audit。** `prospective-001` 根哈希已只读核验；预测、结算及部分状态/目标绑定缺失，保持 **NOT_READY**。见 [Final Report](docs/research/M10_FINAL_REPORT.md)、[逐字段矩阵](docs/research/M10_BINDING_MATRIX.md) 和 [M9.1 最小 schema delta](docs/architecture/V3_M9_1_MINIMAL_SCHEMA_DELTA.md)。未运行真实 replay 或启动第二轮采集。
 
 > **Isolated M10 scaffolding branch.** 提前开发封存数据 eligibility/readiness 契约和纯离线研究助手（UP / DOWN / WAIT）。仅 synthetic 测试，不连接正在运行的 collector、不读取部分真实数据。真实 adapter 保持 NOT_READY，详见 [M10 契约](docs/architecture/V3_M10_SCAFFOLD_CONTRACT.md) 与 [阶段报告](docs/research/V3_M10_SCAFFOLD.md)。下方 M9 说明保留该阶段开发时的历史状态，不代表当前 VPS 运行状态。
