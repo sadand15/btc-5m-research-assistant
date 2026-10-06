@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M9.1 Real Source Preflight：NOT_READY。** 本地冻结模型身份已核对，但真实 prediction target、market state 时间、权威 settlement 时间与 finality、真实 M10 binding 仍有缺口。真实 collector 保持禁用，未生成 study manifest。见 [Real Source Matrix 与审计报告](docs/research/V3_M9_1_REAL_SOURCE_PREFLIGHT.md)。
+
 > **M9.1 binding collection — synthetic 验证阶段。** 新增前瞻 Prediction/BTCReference/MarketState/Settlement 绑定、结构拒绝、固定结算跟踪窗口及 M10 synthetic adapter。真实第二轮尚未启动，REALTIME 创建保持禁用。见 [交付报告](docs/research/V3_M9_1_BINDING_COLLECTION.md) 和 [契约](docs/architecture/V3_M9_1_BINDING_COLLECTION_CONTRACT.md)。
 
 > **M10 Phase 2：已完成真实封存 binding audit。** `prospective-001` 根哈希已只读核验；预测、结算及部分状态/目标绑定缺失，保持 **NOT_READY**。见 [Final Report](docs/research/M10_FINAL_REPORT.md)、[逐字段矩阵](docs/research/M10_BINDING_MATRIX.md) 和 [M9.1 最小 schema delta](docs/architecture/V3_M9_1_MINIMAL_SCHEMA_DELTA.md)。未运行真实 replay 或启动第二轮采集。
