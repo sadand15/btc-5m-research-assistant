@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M9.1 Phase 3 Contract Review：NOT_READY。** 已离线审核手动认证探针取得的 8 份 sanitized fixtures；三组详情均非 BTC 5m。已核验样本为 TARGET_MISMATCH，目标 BTC 5m 仍为 INSUFFICIENT_EVIDENCE。未启用 prediction bridge，未生成 frozen study manifest，未启动第二轮。见 [逐份审阅与 blocker](docs/research/V3_M9_1_PHASE3_CONTRACT_REVIEW.md)。以下 preflight / verification 条目保留其阶段历史状态。
+
 > **M9.1 Source Contract Verification：NOT_READY。** 已明确冻结模型的 Binance Spot 周期目标和 tie 标签；没有证明与 venue 目标等价。缺少本地认证凭证，真实市场 fixture 未取得。新增结算原生时间与本地首次观察时间的区分，未启用 bridge 或 study。见 [Source Contracts](docs/architecture/V3_M9_1_SOURCE_CONTRACT_VERIFICATION.md)。
 
 > **M9.1 Real Source Preflight：NOT_READY。** 本地冻结模型身份已核对，但真实 prediction target、market state 时间、权威 settlement 时间与 finality、真实 M10 binding 仍有缺口。真实 collector 保持禁用，未生成 study manifest。见 [Real Source Matrix 与审计报告](docs/research/V3_M9_1_REAL_SOURCE_PREFLIGHT.md)。
