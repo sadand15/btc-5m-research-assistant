@@ -18,7 +18,9 @@ FIELDS = set('success data id title question description categorySlug slug start
              'crypto type priceFeedProvider priceFeedId priceFeedSymbol startPrice endPrice '
              'conditionId oracleQuestionId resolverAddress resolution resolutionProvider outcomes '
              'name label indexSet onChainId settledAt resolvedAt finalizedAt isFinal finality '
-             'updatedAt timestamp tsMs'.split())
+             'updatedAt timestamp tsMs markets categories cursor '
+             'settled_at resolved_at finalized_at is_final resolutionTime resolutionTimestamp '
+             'settlementTime settlementTimestamp'.split())
 
 
 class ProbeError(Exception):
@@ -64,6 +66,9 @@ def safe_route(path, params):
 
 
 class Client:
+    allowed_route = staticmethod(safe_route)
+    max_requests = 12
+
     def __init__(self, key, session=None, clock=None, pause=None):
         self.key = key
         self.http = session or requests.Session()
@@ -74,9 +79,9 @@ class Client:
 
     def get(self, path, params=None):
         params = params or {}
-        if not safe_route(path, params):
+        if not self.allowed_route(path, params):
             raise ProbeError('ROUTE_NOT_ALLOWED')
-        if self.count >= 12:
+        if self.count >= self.max_requests:
             raise ProbeError('REQUEST_BUDGET_EXHAUSTED')
         if self.count:
             self.pause(1)
