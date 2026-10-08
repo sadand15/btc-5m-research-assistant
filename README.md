@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M9.1 Phase 3b 公开规则审阅：TARGET_MISMATCH / NOT_READY。** 已识别两个官方 BTC 5m 页面：Chainlink 报价中间价目标、平局 50/50，与冻结 Binance Spot 成交 K 线标签不一致；最终性等缺口仍为 INSUFFICIENT_EVIDENCE。见 [精确 blocker 与离线研究任务](docs/research/V3_M9_1_PHASE3B_OFFLINE_CONTRACT_REVIEW.md)。未启动 study。
+
 > **M9.1 Phase 3b：定向 BTC 5m probe 已准备，真实采集待本机运行。** 严格核验 300,000 ms 周期、token mapping 和开放/结算状态，支持有限分页与只读搜索；保持 NOT_READY / INSUFFICIENT_EVIDENCE。见 [运行命令与阶段状态](docs/research/V3_M9_1_PHASE3B_TARGETED_PROBE.md)。
 
 > **M9.1 Phase 3 Contract Review：NOT_READY。** 已离线审核手动认证探针取得的 8 份 sanitized fixtures；三组详情均非 BTC 5m。已核验样本为 TARGET_MISMATCH，目标 BTC 5m 仍为 INSUFFICIENT_EVIDENCE。未启用 prediction bridge，未生成 frozen study manifest，未启动第二轮。见 [逐份审阅与 blocker](docs/research/V3_M9_1_PHASE3_CONTRACT_REVIEW.md)。以下 preflight / verification 条目保留其阶段历史状态。

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "review_date": "2026-10-08",
+  "readiness": "NOT_READY",
+  "prediction_compatibility": "TARGET_MISMATCH",
+  "scope": "Two identified public BTC 5m contracts only",
+  "records": [
+    {
+      "url": "https://predict.fun/market/btc-updown-5m-1791453300",
+      "slug": "btc-updown-5m-1791453300",
+      "observed_at_utc": "2026-10-08T09:58:06.547988+00:00",
+      "http_status": 200,
+      "evidence_type": "ANONYMOUS_PUBLIC_HTML_NOT_API_FIXTURE",
+      "titles": [
+        "Bitcoin Up or Down - October 8, 5:55AM-6AM ET | Predict"
+      ],
+      "visible_resolved_label": false,
+      "body_sha256": "27426ac8ef5fad66f55debedb25e58d1539cb87af7ba838847518838bf0cda27",
+      "rule_text_sha256": "807d39b021a5d19c3928acfa93059bd5b75032b2006f6bea2fb7bac7d097c626",
+      "native_market_id": null,
+      "token_ids": null,
+      "native_settled_at": null,
+      "first_observed_final_at": null,
+      "rule_summary": {
+        "reference": "Chainlink BTC/USDT stream; Binance top-of-book bid/ask midpoint, converted into quote currency",
+        "up": "ending price > starting price",
+        "down": "ending price < starting price",
+        "tie": "50-50",
+        "end_reference": "Close of the 5m Chainlink candlestick immediately preceding market end",
+        "start_reference": "Price at beginning; exact sample-selection algorithm unspecified",
+        "fallback": "Consensus of reliable sources if Chainlink unavailable or unusable"
+      },
+      "unknowns": [
+        "cancellation payout",
+        "native timestamp semantics",
+        "irreversible finality",
+        "reopen/revise rules",
+        "exact reference sampling at boundary"
+      ]
+    },
+    {
+      "url": "https://predict.fun/market/btc-updown-5m-1791453000",
+      "slug": "btc-updown-5m-1791453000",
+      "observed_at_utc": "2026-10-08T09:58:06.862434+00:00",
+      "http_status": 200,
+      "evidence_type": "ANONYMOUS_PUBLIC_HTML_NOT_API_FIXTURE",
+      "titles": [
+        "Bitcoin Up or Down - October 8, 5:50AM-5:55AM ET | Predict"
+      ],
+      "visible_resolved_label": true,
+      "body_sha256": "cfa625145a3531ae08ab555bf70b87e65944c62461de62aa2cb37c9385d7cc33",
+      "rule_text_sha256": "807d39b021a5d19c3928acfa93059bd5b75032b2006f6bea2fb7bac7d097c626",
+      "native_market_id": null,
+      "token_ids": null,
+      "native_settled_at": null,
+      "first_observed_final_at": null,
+      "rule_summary": {
+        "reference": "Chainlink BTC/USDT stream; Binance top-of-book bid/ask midpoint, converted into quote currency",
+        "up": "ending price > starting price",
+        "down": "ending price < starting price",
+        "tie": "50-50",
+        "end_reference": "Close of the 5m Chainlink candlestick immediately preceding market end",
+        "start_reference": "Price at beginning; exact sample-selection algorithm unspecified",
+        "fallback": "Consensus of reliable sources if Chainlink unavailable or unusable"
+      },
+      "unknowns": [
+        "cancellation payout",
+        "native timestamp semantics",
+        "irreversible finality",
+        "reopen/revise rules",
+        "exact reference sampling at boundary"
+      ]
+    }
+  ]
+}
