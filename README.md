@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M9.2 Offline Target Semantics Lab：synthetic-only。** 独立模块演示成交价／中间价／参考价的标签分歧，验证 UP/DOWN/TIE 概率、时间因果约束及三分类校准指标。真实状态继续为 TARGET_MISMATCH / NOT_READY。见 [研究报告与运行方式](docs/research/V3_M9_2_OFFLINE_TARGET_SEMANTICS.md)。
+
 > **M9.1 Phase 3b 公开规则审阅：TARGET_MISMATCH / NOT_READY。** 已识别两个官方 BTC 5m 页面：Chainlink 报价中间价目标、平局 50/50，与冻结 Binance Spot 成交 K 线标签不一致；最终性等缺口仍为 INSUFFICIENT_EVIDENCE。见 [精确 blocker 与离线研究任务](docs/research/V3_M9_1_PHASE3B_OFFLINE_CONTRACT_REVIEW.md)。未启动 study。
 
 > **M9.1 Phase 3b：定向 BTC 5m probe 已准备，真实采集待本机运行。** 严格核验 300,000 ms 周期、token mapping 和开放/结算状态，支持有限分页与只读搜索；保持 NOT_READY / INSUFFICIENT_EVIDENCE。见 [运行命令与阶段状态](docs/research/V3_M9_1_PHASE3B_TARGETED_PROBE.md)。
