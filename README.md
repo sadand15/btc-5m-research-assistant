@@ -1,5 +1,7 @@
 # BTC 5M Research Assistant
 
+> **M10.2 Offline End-to-End Integration。** 独立 integration 分支复用 M9.2 三分类校验与评分，新增 M10 离线 Adapter 入口和自包含 HTML 报告。12 条合成记录可评分，8 条异常记录明确拒绝；SYNTHETIC_READY 不等于 REAL_DATA_NOT_READY 已解除。见 [Final Report 与一条运行命令](docs/research/M10_2_FINAL_REPORT.md)。
+
 > **M9.2 Offline Target Semantics Lab：synthetic-only。** 独立模块演示成交价／中间价／参考价的标签分歧，验证 UP/DOWN/TIE 概率、时间因果约束及三分类校准指标。真实状态继续为 TARGET_MISMATCH / NOT_READY。见 [研究报告与运行方式](docs/research/V3_M9_2_OFFLINE_TARGET_SEMANTICS.md)。
 
 > **M9.1 Phase 3b 公开规则审阅：TARGET_MISMATCH / NOT_READY。** 已识别两个官方 BTC 5m 页面：Chainlink 报价中间价目标、平局 50/50，与冻结 Binance Spot 成交 K 线标签不一致；最终性等缺口仍为 INSUFFICIENT_EVIDENCE。见 [精确 blocker 与离线研究任务](docs/research/V3_M9_1_PHASE3B_OFFLINE_CONTRACT_REVIEW.md)。未启动 study。
