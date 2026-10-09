@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light"><title>BTC 5m · 实时研究工作台</title>
+  <link rel="stylesheet" href="/static/app.css"><script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="masthead"><div class="brand"><span class="brand-mark">₿</span><div>BTC 5m <span class="brand-sub">RESEARCH</span></div></div><div class="header-right"><span class="live-dot"></span>公开行情 · 只读研究<span class="version">v1.0</span></div></header>
+<main>
+  <noscript><div class="notice danger">浏览器未启用 JavaScript，行情无法更新。请启用 JavaScript 后刷新；本页不会显示未经确认的实时价格。</div></noscript>
+  <div id="demo-banner" class="notice demo" hidden>合成演示模式 · SYNTHETIC_DEMO · 以下行情并非真实市场数据</div>
+  <section class="page-title"><div><div class="eyebrow">MARKET OBSERVATORY</div><h1>实时研究工作台</h1><p>观察价格与数据质量，保留每一个时间边界。</p></div><div class="utc-clock"><span>当前 UTC 时间</span><strong id="clock">等待连接</strong></div></section>
+  <div class="source-notice"><span class="info-icon">i</span><div><strong>价格来源有明确边界</strong><span>本页展示 Binance Spot BTCUSDT 公开行情。它不是 Predict.fun 的 Chainlink 结算参考价，也不能用于推断其最终结果。</span></div><span class="read-only">READ ONLY</span></div>
+  <section class="overview-grid">
+    <article class="card price-card"><div class="card-top"><h2>比特币 <span class="muted">/ BTCUSDT</span></h2><span class="status" id="health-badge" role="status">连接中</span></div><div class="price-row"><div id="live-price" class="price">—</div><span class="price-unit">USDT</span></div><div id="price-caption" class="price-caption">正在连接公开行情源，不显示未验证价格。</div><div class="metric-pair"><div><span>来源</span><strong id="source">Binance Spot</strong></div><div><span>源数据年龄</span><strong id="age">—</strong></div><div title="接收时间减源时间，含成交间隔，不等同请求往返耗时"><span>源 → 接收间隔</span><strong id="latency">—</strong></div></div><div class="last-known" id="last-known">尚无最近有效报价</div></article>
+    <article class="card cycle-card"><div class="card-top"><h2>UTC 五分钟周期</h2><span class="tag">固定时间桶</span></div><div class="cycle-main"><div><span class="small-label">距本周期结束</span><div id="countdown" class="countdown">—:—</div></div><div class="reference"><span class="small-label">周期起点参考价</span><strong id="reference-price">—</strong><span>USDT</span></div></div><div class="progress-track"><div id="cycle-progress"></div></div><div class="cycle-times"><div><span>开始 · UTC</span><strong id="cycle-start">—</strong></div><div><span>结束 · UTC</span><strong id="cycle-end">—</strong></div></div><p class="definition">参考定义：Binance Spot BTCUSDT 的 UTC 五分钟 K 线开盘价，即该桶的第一笔成交价。非 Chainlink 参考价。</p><div id="reference-time" class="tiny">等待本周期参考价</div></article>
+  </section>
+  <section class="main-grid">
+    <article class="card chart-card"><div class="card-top chart-heading"><div><h2>BTC 价格走势</h2><p class="subline">已收盘 1 分钟 K 线 · 缺失区间不连线</p></div><div class="range-control" role="group" aria-label="历史时间范围"><button type="button" class="selected" data-range="1" aria-pressed="true">1 小时</button><button type="button" data-range="24" aria-pressed="false">24 小时</button></div></div><div class="chart-summary"><strong id="chart-last">—</strong><span id="chart-range">等待历史行情</span><span id="history-badge" class="tag">加载中</span></div><div id="chart" class="chart" role="img" aria-label="比特币历史价格图"><svg id="chart-svg" viewBox="0 0 900 300" preserveAspectRatio="none" aria-hidden="true"></svg><div id="chart-empty" class="chart-empty">正在获取历史行情</div><div id="chart-tooltip" class="chart-tooltip" hidden></div></div><div class="chart-foot"><span>成交价格 · USDT</span><span id="history-asof">尚未取得历史数据</span></div></article>
+    <article class="card research-card"><div class="card-top"><h2>研究模型状态</h2><span class="tag amber">尚未就绪</span></div><div class="research-icon">∿</div><h3>先确认目标，再解释概率</h3><p>冻结模型与真实预测市场的标签语义不一致。本页不输出方向概率或交易信号。</p><div class="contract-status"><span>真实数据适配</span><strong>REAL_DATA_NOT_READY</strong><span>目标兼容性</span><strong>TARGET_MISMATCH</strong></div><div class="research-note">UP、DOWN 与 TIE 必须分别定义。<code>1 − p_up</code> 不能直接解释为严格 DOWN。</div></article>
+  </section>
+  <section class="bottom-grid">
+    <article class="card health-card"><div class="card-top"><h2>数据健康</h2><span class="tag" id="poll-label">每 2 秒检查</span></div><div id="health-message" class="health-message" aria-live="polite">等待首个行情响应</div><dl class="health-list"><div><dt>源时间戳 · UTC</dt><dd id="source-time">—</dd></div><div><dt>本机接收时间 · UTC</dt><dd id="received-time">—</dd></div><div><dt>最近成功 · UTC</dt><dd id="success-time">—</dd></div><div><dt>请求耗时</dt><dd id="request-ms">—</dd></div><div><dt>连续失败 / 恢复次数</dt><dd id="failure-count">—</dd></div><div><dt>下次重试 · UTC</dt><dd id="retry-time">—</dd></div></dl><div class="health-policy">源数据超过 15 秒或连接失败时，实时价格撤下，仅保留明确标注的最近有效报价。</div><div id="events" class="events" aria-label="最近连接事件"></div></article>
+    <article class="card quality-card"><div class="card-top"><h2>历史数据质量</h2><span class="tag">最近 24 小时</span></div><div class="coverage"><strong id="coverage">—</strong><span>分钟 K 线覆盖率</span></div><div class="quality-bar"><div id="coverage-bar"></div></div><div class="quality-stats"><div><strong id="observed">—</strong><span>已收到</span></div><div><strong id="missing">—</strong><span>缺失</span></div><div><strong id="expected">1,440</strong><span>预期</span></div></div><p id="quality-message" class="definition">等待历史数据检查。缺失数据不插值，不视为连续观测。</p></article>
+    <article class="card reports-card"><div class="card-top"><h2>离线研究入口</h2><span class="tag">SYNTHETIC</span></div><p class="subline">可复现的研究演示，与本页实时行情独立。</p><a id="m92-link" class="report-link" href="/reports/m92" target="_blank" rel="noopener"><span><small>M9.2</small><strong>目标语义研究</strong><span>三分类标签 · 时间因果检查</span></span><b>↗</b></a><a id="m102-link" class="report-link" href="/reports/m102" target="_blank" rel="noopener"><span><small>M10.2</small><strong>端到端研究报告</strong><span>概率校准 · 评分与拒绝原因</span></span><b>↗</b></a><a id="methods-link" class="methods-link" href="/docs/methods" target="_blank" rel="noopener">研究方法与使用说明 <span>↗</span></a></article>
+  </section>
+  <footer><span>BTC 5m Realtime Research Dashboard <b>v1.0</b></span><span>公开行情观察 · 不连接账户 · 不生成订单</span></footer>
+</main>
+</body>
+</html>

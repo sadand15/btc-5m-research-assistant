@@ -1,4 +1,37 @@
-# BTC 5M Research Assistant
+# BTC 5m Realtime Research Dashboard v1.0
+
+**可在 Windows 本机打开、自动更新的中文 BTC 行情与研究工作台。**
+
+当前价格、源时间与接收时间、UTC 五分钟倒计时、1 小时／24 小时历史图、
+数据健康及缺失监控，集中在一个页面。网络异常时撤下主价格，恢复后自动继续。
+
+在此分支仓库目录打开 PowerShell，一条命令启动（Python 3.12，无额外运行依赖）：
+
+```powershell
+python scripts/start_dashboard.py
+```
+
+浏览器自动打开 **http://127.0.0.1:8765**。保持终端运行，Ctrl+C 停止。
+端口冲突可追加 `--port 8766`。无需 API Key、账户或模型下载。
+
+![Windows 本地真实运行截图，2026-10-09 14:24:50 UTC](docs/images/dashboard-live.png)
+
+**价格定义：** Binance Spot BTCUSDT 公开成交价；周期参考为 UTC 5m K 线开盘价。
+它们都**不是 Predict.fun 的 Chainlink 结算参考价**。截图只展示当时界面，不代表当前价格。
+
+研究状态固定为 **REAL_DATA_NOT_READY / TARGET_MISMATCH**，不输出伪造方向概率。
+页面保留 M9.2/M10.2 合成研究入口；实时公开行情与离线研究分开。
+
+- [启动、界面操作、时间语义、故障处理与架构](docs/REALTIME_DASHBOARD.md)
+- [Windows/Linux Dashboard 自动化与截图 CI](.github/workflows/dashboard.yml)
+- [完整源代码](src/btc5_v3/realtime_dashboard/)
+
+行情服务仅调用公开 GET 数据接口；无钱包、订单、资金操作或生产 collector。
+M8 冻结模型与旧 M9 sealed evidence 保持不变。
+
+---
+
+## Offline research foundation · M10.2
 
 **An offline research system for price-target semantics, causal data validation and probability analysis.**
 
