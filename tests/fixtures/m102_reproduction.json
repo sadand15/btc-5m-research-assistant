@@ -1,0 +1,401 @@
+{
+  "calibration": {
+    "mid:synthetic-strict-three-way-v1:end-1": {
+      "bins": 5,
+      "boundary_rule": "[lower,upper), final bin includes 1",
+      "calibration_fitted": false,
+      "classwise_ece": 0.4666666666666666,
+      "limitation": "Synthetic scoring does not establish real calibration or trading value",
+      "log_loss": 1.2039728043259361,
+      "log_loss_status": "FINITE",
+      "multiclass_brier": 0.86,
+      "n": 1,
+      "origin": "SYNTHETIC_TEST",
+      "reliability": [
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 3,
+          "frequency": 0.0,
+          "mean_probability": 0.6,
+          "n": 1,
+          "side": "UP"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 1,
+          "frequency": 1.0,
+          "mean_probability": 0.3,
+          "n": 1,
+          "side": "DOWN"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 0,
+          "frequency": 0.0,
+          "mean_probability": 0.1,
+          "n": 1,
+          "side": "TIE"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        }
+      ],
+      "zero_true_probability_count": 0
+    },
+    "reference:synthetic-strict-three-way-v1:end-1": {
+      "bins": 5,
+      "boundary_rule": "[lower,upper), final bin includes 1",
+      "calibration_fitted": false,
+      "classwise_ece": 0.6,
+      "limitation": "Synthetic scoring does not establish real calibration or trading value",
+      "log_loss": 2.3025850929940455,
+      "log_loss_status": "FINITE",
+      "multiclass_brier": 1.26,
+      "n": 1,
+      "origin": "SYNTHETIC_TEST",
+      "reliability": [
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 3,
+          "frequency": 0.0,
+          "mean_probability": 0.6,
+          "n": 1,
+          "side": "UP"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 1,
+          "frequency": 0.0,
+          "mean_probability": 0.3,
+          "n": 1,
+          "side": "DOWN"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 0,
+          "frequency": 1.0,
+          "mean_probability": 0.1,
+          "n": 1,
+          "side": "TIE"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        }
+      ],
+      "zero_true_probability_count": 0
+    },
+    "trade:synthetic-strict-three-way-v1:end-1": {
+      "bins": 5,
+      "boundary_rule": "[lower,upper), final bin includes 1",
+      "calibration_fitted": false,
+      "classwise_ece": 0.0,
+      "limitation": "Synthetic scoring does not establish real calibration or trading value",
+      "log_loss": 0.8979457248567797,
+      "log_loss_status": "FINITE",
+      "multiclass_brier": 0.54,
+      "n": 10,
+      "origin": "SYNTHETIC_TEST",
+      "reliability": [
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 3,
+          "frequency": 0.6,
+          "mean_probability": 0.6,
+          "n": 10,
+          "side": "UP"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "UP"
+        },
+        {
+          "bin": 0,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 1,
+          "frequency": 0.3,
+          "mean_probability": 0.3,
+          "n": 10,
+          "side": "DOWN"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "DOWN"
+        },
+        {
+          "bin": 0,
+          "frequency": 0.1,
+          "mean_probability": 0.1,
+          "n": 10,
+          "side": "TIE"
+        },
+        {
+          "bin": 1,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 2,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 3,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        },
+        {
+          "bin": 4,
+          "frequency": null,
+          "mean_probability": null,
+          "n": 0,
+          "side": "TIE"
+        }
+      ],
+      "zero_true_probability_count": 0
+    }
+  },
+  "files": {
+    "input.json": "2718b77b12b8986031e5cff4689e7803d6e5c41591b2c45e23f537dd969717f0",
+    "report.html": "04c78a28b18c61d466da44cb6ec8c9992f312ed2e56202b4b832a08200dc915e",
+    "report.json": "32a7b7d4eba8411ef640630be67901b5956a3aaacd261390c8c43b0a8f036a26"
+  },
+  "rejections": {
+    "rejected-authority": [
+      "MISSING_AUTHORITATIVE_OUTCOME"
+    ],
+    "rejected-crossed_book": [
+      "INVALID_OR_MISSING_RECORD_BINDING"
+    ],
+    "rejected-future_input": [
+      "PREDICTION_INPUT_BINDING_MISMATCH"
+    ],
+    "rejected-identity": [
+      "MISSING_CAUSAL_INPUT",
+      "MISSING_OR_AMBIGUOUS_ENDPOINT",
+      "MISSING_OR_WRONG_MARKET_IDENTITY",
+      "OUTCOME_BINDING_MISMATCH",
+      "PREDICTION_INPUT_BINDING_MISMATCH"
+    ],
+    "rejected-missing_price": [
+      "MISSING_FEED_PRICE"
+    ],
+    "rejected-missing_time": [
+      "INVALID_OR_MISSING_RECORD_BINDING"
+    ],
+    "rejected-quality": [
+      "DATA_QUALITY_NOT_VALID"
+    ],
+    "rejected-time": [
+      "OUTCOME_TIME_BINDING_INVALID"
+    ]
+  },
+  "report_hash": "cc3676a69c734acfee586e2b3b4076fa37a842d9055348d3609536e49c3930b7",
+  "schema_version": 1
+}

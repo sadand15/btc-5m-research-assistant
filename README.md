@@ -1,5 +1,93 @@
 # BTC 5M Research Assistant
 
+**An offline research system for price-target semantics, causal data validation and probability analysis.**
+
+This project asks whether a BTC five-minute model and a prediction-market contract
+actually describe the same event. It preserves price-source, timestamp, outcome
+and quality bindings before allowing scoring. Current demo: **M10.2**.
+
+**SYNTHETIC_READY · REAL_DATA_NOT_READY · TARGET_MISMATCH**
+
+The demonstration is fully synthetic. It is not a trading bot, a profitability
+claim, or proof that the frozen model matches a real prediction market.
+
+## Start here
+
+Requires **Python 3.12 + Git**. No account, API key, model download or Python
+package installation is required for the standalone reproduction command.
+From a clean checkout of this branch:
+
+```text
+python scripts/verify_m102_reproduction.py
+```
+
+Open the printed `report.html` path in any browser. The command performs two
+independent fresh runs and verifies committed SHA256 hashes, metrics, rejection
+reasons and 95 protected source hashes. A mismatch fails rather than updating
+expectations. For a development-only run: `python scripts/run_m102_offline.py`.
+
+## What the report demonstrates
+
+- **UP / DOWN / TIE:** explicit three-class probabilities; DOWN is not `1-p_up`.
+- **Causality:** future quotes cannot alter an earlier prediction record.
+- **Fail-closed scoring:** missing identity, authority, timing or invalid quality
+  produces a visible rejection, never a guessed outcome.
+- **Calibration:** Brier, Log Loss and fixed-bin statistics separated by target.
+- **Reproducibility:** 12 accepted / eight rejected fixtures; self-contained HTML,
+  replayable JSON and verification metadata.
+
+The constructed trade group has Brier 0.54 and ECE 0 by design. Those numbers
+check arithmetic, not real-world skill. Confidence means maximum class probability,
+not an estimated win rate or statistical confidence interval.
+
+```mermaid
+flowchart LR
+  A[Synthetic input] --> B[Sealed offline envelope]
+  B --> C[M10 three-class Adapter]
+  C --> D[M9.2 causal and semantic checks]
+  D --> E[Accepted: grouped probability scores]
+  D --> F[Rejected: explicit reasons]
+  E --> G[HTML report and reproducibility hashes]
+  F --> G
+```
+
+## Documentation
+
+- [Architecture, research methods and report guide](docs/M102_GUIDE.md)
+- [M10.2 implementation and Final Report](docs/research/M10_2_FINAL_REPORT.md)
+- [M9.2 target semantics experiments](docs/research/V3_M9_2_OFFLINE_TARGET_SEMANTICS.md)
+- [Real contract mismatch and remaining blockers](docs/research/V3_M9_1_PHASE3B_OFFLINE_CONTRACT_REVIEW.md)
+- [Windows/Linux reproduction workflow](.github/workflows/m102-offline.yml)
+
+## Validation and boundaries
+
+The dedicated GitHub Actions workflow runs integration and synthetic tests,
+independent reproduction and credential scans on Windows and Linux. Successful
+runs publish downloadable report artifacts. The existing full-suite workflow
+remains enabled. Check the run for the exact commit; documentation alone is not
+proof that remote CI passed.
+
+Only the offline Adapter entry point is new. Existing binary M8/M10 contracts,
+frozen models and old sealed evidence are preserved. Real oracle compatibility,
+settlement finality and cancellation semantics remain unresolved. No collector,
+wallet, orders or funding operation is enabled by this demo.
+
+## Project map
+
+| Location | Purpose |
+|---|---|
+| `src/btc5_v3/target_semantics/` | M9.2 labels, causal checks and calibration |
+| `src/btc5_v3/research_adapter/` | Existing adapters plus isolated three-class offline integration |
+| `scripts/verify_m102_reproduction.py` | Clean-checkout reproduction and golden-hash gate |
+| `tests/fixtures/m102_reproduction.json` | Reviewed expected metrics, reasons and hashes |
+| `runtime/m102-offline-integration/` | Generated reports; excluded from Git |
+| `docs/` | Contracts, methodology, version history and research limitations |
+
+<details>
+<summary>Historical V1–M10.2 implementation notes (stage-specific snapshots)</summary>
+
+## Historical project notes
+
 > **M10.2 Offline End-to-End Integration。** 独立 integration 分支复用 M9.2 三分类校验与评分，新增 M10 离线 Adapter 入口和自包含 HTML 报告。12 条合成记录可评分，8 条异常记录明确拒绝；SYNTHETIC_READY 不等于 REAL_DATA_NOT_READY 已解除。见 [Final Report 与一条运行命令](docs/research/M10_2_FINAL_REPORT.md)。
 
 > **M9.2 Offline Target Semantics Lab：synthetic-only。** 独立模块演示成交价／中间价／参考价的标签分歧，验证 UP/DOWN/TIE 概率、时间因果约束及三分类校准指标。真实状态继续为 TARGET_MISMATCH / NOT_READY。见 [研究报告与运行方式](docs/research/V3_M9_2_OFFLINE_TARGET_SEMANTICS.md)。
@@ -189,3 +277,5 @@ git rev-parse 'v2.0.0^{commit}'
 ```
 
 `forward_release_provenance` 表和 `runtime/forward/release.json` 记录 Git SHA、版本、模型及配置哈希，并通过 `run_id` 关联观测。注册时校验提交中的源码与原冻结哈希完全一致，不改模型、原 manifest 或观测行。该元数据是发布时对既有冻结研究的核验归属。七天观察首先验证管线与目标差异，不证明稳定盈利。
+
+</details>
