@@ -7,6 +7,7 @@
   const shortTime = value => Number.isFinite(value) ? new Date(value).toISOString().slice(11, 19) : "—";
   const duration = value => Number.isFinite(value) ? `${Math.max(0, value / 1000).toFixed(1)} 秒` : "—";
   const statusNames = {CONNECTING: "连接中", HEALTHY: "正常", DELAYED: "数据延迟", DISCONNECTED: "连接中断", RECOVERING: "连接恢复中"};
+  const decisionReasons = {REAL_VENUE_BINDING_REQUIRED:"真实市场身份、代币映射和结算规则尚未完成绑定",TARGET_MISMATCH:"冻结模型预测成交价，但市场使用 Chainlink 参考价",PREDICTION_NOT_AVAILABLE:"当前没有针对该市场生成并验证的预测",EDGE_TOO_SMALL_OR_UNAVAILABLE:"净优势不足或缺少费用／报价",SPREAD_TOO_WIDE:"价差超过固定门槛",LIQUIDITY_TOO_LOW:"可见流动性不足",CALIBRATION_NOT_VERIFIED:"概率校准证据未通过",DATA_QUALITY_NOT_VERIFIED:"数据质量检查未通过"};
   const reasons = {CONNECTING: "等待首个有效行情响应", STARTING: "行情连接正在建立", OK: "行情连接正常", HEALTHY: "行情连接正常", SOURCE_STALE: "源行情已过期，暂停显示实时价格", STALE_QUOTE: "行情已过期，暂停显示实时价格", TIMEOUT: "行情请求超时，正在退避重试", CONNECTION_FAILED: "行情连接失败，正在退避重试", HTTP_ERROR: "行情服务返回异常，正在重试", RATE_LIMITED: "行情源限流，等待后续重试", RECOVERING: "连接已恢复，等待连续有效行情确认"};
   Object.assign(reasons, {WAITING_FOR_FEED: "等待首个有效行情响应", FRESH_TRADE: "行情连接正常，收到新鲜成交报价", STALE_SOURCE: "源行情已过期，暂停显示实时价格", CLOCK_SKEW: "源时间与本机时钟不一致，已拒绝实时报价", CONNECTION_FAILURE: "行情连接失败，正在退避重试", RATE_LIMIT: "行情源限流，等待退避后重试", FEED_RECOVERED: "行情连接已恢复，继续监控新鲜度", OUT_OF_ORDER_QUOTE: "收到时间乱序报价，已拒绝覆盖有效数据", INTERNAL_FEED_ERROR: "行情处理异常，已暂停实时价格"});
   let state = null, stateAt = 0, requestFailed = false, range = 1, chartPoints = [], chartBounds = null, timer = null;
@@ -34,6 +35,13 @@
     const events = $("events"); events.replaceChildren();
     (state.events || []).slice(0, 2).forEach(event => { const el = document.createElement("div"); el.textContent = `${shortTime(event.at)} UTC · ${statusNames[event.status] || "状态变化"} · ${reasons[event.reason] || "连接状态已更新"}`; events.append(el); });
     if (state.reports) { link("m92-link", state.reports.m92); link("m102-link", state.reports.m102); link("methods-link", state.reports.methods); }
+    const decision = state.decision || {signal:"WAIT",state:"NOT_EVALUATED",reasons:["REAL_VENUE_BINDING_REQUIRED"]};
+    text("decision-signal", decision.signal || "WAIT"); text("decision-state", decision.state === "EVALUATED" ? "已评估" : "未评估");
+    $("decision-signal").className = `decision-signal ${(decision.signal || "WAIT").toLowerCase()}`;
+    text("decision-summary", decision.state === "EVALUATED" ? "基于已验证市场证据的当前研究结论。" : "当前没有足够的真实市场契约和预测证据，系统不会猜测 UP 或 DOWN。");
+    const reasonsNode = $("decision-reasons"); reasonsNode.replaceChildren();
+    (decision.reasons || []).forEach(reason => { const el = document.createElement("div"); el.textContent = `· ${decisionReasons[reason] || reason}`; reasonsNode.append(el); });
+    text("decision-validity", Number.isFinite(decision.valid_until) ? `有效至 ${utc(decision.valid_until)}` : "有效期：等待真实市场绑定");
     renderClock(); drawChart();
   }
   function renderClock() {

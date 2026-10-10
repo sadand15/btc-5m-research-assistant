@@ -20,7 +20,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install pytest==9.1.1 playwright==1.63.0
       - run: python -m playwright install --with-deps chromium
-      - run: python -m pytest -q tests/test_realtime_dashboard.py
+      - run: python -m pytest -q tests/test_realtime_dashboard.py tests/test_decision_assistant_evaluation.py
       - run: python scripts/verify_realtime_dashboard_ui.py
       - run: python scripts/verify_m102_reproduction.py
       - run: python scripts/security_scan.py index

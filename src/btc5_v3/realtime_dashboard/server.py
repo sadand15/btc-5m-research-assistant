@@ -64,10 +64,11 @@ def make_server(service, root, port=8765):
             path = urlsplit(self.path).path
             if path == '/api/state':
                 self.send(json.dumps(service.snapshot(), allow_nan=False), 'application/json; charset=utf-8')
-            elif path in ('/', '/static/app.js', '/static/app.css'):
+            elif path in ('/', '/static/app.js', '/static/app.css', '/static/decision.css'):
                 name, mime = {'/': ('index.html', 'text/html'),
                               '/static/app.js': ('app.js', 'text/javascript'),
-                              '/static/app.css': ('app.css', 'text/css')}[path]
+                              '/static/app.css': ('app.css', 'text/css'),
+                              '/static/decision.css': ('decision.css', 'text/css')}[path]
                 self.send((STATIC/name).read_bytes(), mime+'; charset=utf-8')
             elif path in ('/reports/m92', '/reports/m102'):
                 self.send(offline_report(path.rsplit('/', 1)[1]), 'text/html; charset=utf-8')

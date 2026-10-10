@@ -128,7 +128,13 @@ class DashboardService:
                     expected=1440, observed=len(points), missing=1440-len(points),
                     coverage=len(points)/1440, error=error),
                 research=dict(status='REAL_DATA_NOT_READY', compatibility='TARGET_MISMATCH',
-                              prediction_available=False), events=list(self.events),
+                              prediction_available=False),
+                decision=dict(signal='WAIT', state='NOT_EVALUATED',
+                    reasons=['REAL_VENUE_BINDING_REQUIRED', 'TARGET_MISMATCH',
+                             'PREDICTION_NOT_AVAILABLE'],
+                    valid_until=cycle_start+CYCLE, p_up=None, p_down=None, p_tie=None,
+                    market_id=None, generated_at=None),
+                events=list(self.events),
                 reports=dict(m92='/reports/m92', m102='/reports/m102', methods='/docs/methods'))
 
     def _loop(self, task, base):
