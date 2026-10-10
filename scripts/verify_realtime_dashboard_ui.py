@@ -78,6 +78,10 @@ def run(channel=None):
             page.goto(url)
             expect(page.locator('#live-price')).not_to_have_text('—')
             expect(page.locator('#demo-banner')).to_be_visible()
+            expect(page.locator('#decision-signal')).to_have_text('WAIT')
+            expect(page.locator('#decision-state')).to_have_text('未评估')
+            expect(page.locator('#decision-reasons')).to_contain_text('真实市场身份')
+            results.append('explicit_current_decision_wait_and_reasons')
             before = page.locator('#source-time').inner_text()
             expect(page.locator('#source-time')).not_to_have_text(before, timeout=6000)
             assert len(requests) >= 2 and min(b-a for a, b in zip(requests, requests[1:])) >= 1.8
