@@ -132,7 +132,7 @@ class DashboardService:
                 decision=dict(signal='WAIT', state='NOT_EVALUATED',
                     reasons=['REAL_VENUE_BINDING_REQUIRED', 'TARGET_MISMATCH',
                              'PREDICTION_NOT_AVAILABLE'],
-                    valid_until=cycle_start+CYCLE, p_up=None, p_down=None, p_tie=None,
+                    valid_until=None, p_up=None, p_down=None, p_tie=None,
                     market_id=None, generated_at=None),
                 events=list(self.events),
                 reports=dict(m92='/reports/m92', m102='/reports/m102', methods='/docs/methods'))

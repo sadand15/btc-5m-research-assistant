@@ -27,6 +27,8 @@ def test_valid_up_keeps_tie_explicit():
     assert result.signal == "UP"
     assert result.state == "EVALUATED"
     assert result.probabilities == (D(".60"), D(".30"), D(".10"))
+    assert result.up_edge == D(".13")
+    assert result.down_edge == D("-.02")
 
 
 def test_down_can_win_when_up_probability_is_higher_but_price_is_worse():
@@ -54,8 +56,9 @@ def test_binding_failure_is_not_evaluated(changes, reason):
 
 
 def test_edge_or_tte_gates_wait():
-    assert evaluate(item(yes_ask=D(".61"), no_ask=D(".31")), policy()).signal == "WAIT"
-    assert "EDGE_TOO_SMALL_OR_UNAVAILABLE" in evaluate(item(yes_ask=D(".61"), no_ask=D(".31")), policy()).reasons
+    result = evaluate(item(yes_bid=D(".63"), yes_ask=D(".65"), no_bid=D(".33"), no_ask=D(".35")), policy())
+    assert result.signal == "WAIT" and result.state == "EVALUATED"
+    assert "EDGE_TOO_SMALL_OR_UNAVAILABLE" in result.reasons
     result = evaluate(item(as_of=290_000), policy())
     assert result.signal == "WAIT" and "PREDICTION_EXPIRED" in result.reasons
 
@@ -68,3 +71,45 @@ def test_tie_probability_is_not_strict_down_complement():
 def test_real_origin_without_approved_evidence_waits():
     result = evaluate(item(origin="REAL_VERIFIED", approval_digest=None, approved_digests=frozenset()), policy())
     assert result.signal == "WAIT" and "MISSING_APPROVAL_DIGEST" in result.reasons
+
+
+def test_real_input_cannot_self_approve():
+    result = evaluate(item(origin="REAL_VERIFIED"), policy())
+    assert result.state == "NOT_EVALUATED"
+    assert "REAL_PREDICTOR_REGISTRY_UNAVAILABLE" in result.reasons
+    assert result.up_edge is None and result.down_edge is None
+
+
+@pytest.mark.parametrize("changes,reason", [
+    ({"as_of": True}, "MISSING_TIME_BINDING"),
+    ({"as_of": None}, "MISSING_TIME_BINDING"),
+    ({"market_start": 1, "market_end": 300001}, "NOT_UTC_5M_MARKET"),
+    ({"prediction_expires_at": 300001}, "INVALID_PREDICTION_VALIDITY"),
+    ({"prediction_expires_at": 100000}, "PREDICTION_EXPIRED"),
+    ({"source_at": 80000}, "STALE_QUOTE"),
+    ({"calibration_verified": "false"}, "CALIBRATION_NOT_VERIFIED"),
+    ({"quality_verified": "false"}, "DATA_QUALITY_NOT_VERIFIED"),
+    ({"yes_depth": None}, "INVALID_LIQUIDITY"),
+])
+def test_invalid_evidence_never_has_computed_edges(changes, reason):
+    result = evaluate(item(**changes), policy())
+    assert result.state == "NOT_EVALUATED" and result.signal == "WAIT"
+    assert reason in result.reasons
+    assert result.up_edge is None and result.down_edge is None
+
+
+@pytest.mark.parametrize("changes,reason", [
+    ({"yes_depth": D("1")}, "LIQUIDITY_TOO_LOW"),
+    ({"yes_bid": D(".3")}, "SPREAD_TOO_WIDE"),
+])
+def test_valid_policy_gate_is_evaluated_wait(changes, reason):
+    result = evaluate(item(**changes), policy())
+    assert result.state == "EVALUATED" and result.signal == "WAIT"
+    assert reason in result.reasons
+
+
+def test_half_tie_and_zero_tie_payout_are_distinct():
+    half = evaluate(item(), policy())
+    strict = evaluate(item(token_mapping="YES_UP_NO_DOWN_STRICT"), policy())
+    assert half.up_edge - strict.up_edge == D(".05")
+    assert half.down_edge - strict.down_edge == D(".05")

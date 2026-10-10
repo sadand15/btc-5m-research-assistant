@@ -80,6 +80,7 @@ def run(channel=None):
             expect(page.locator('#demo-banner')).to_be_visible()
             expect(page.locator('#decision-signal')).to_have_text('WAIT')
             expect(page.locator('#decision-state')).to_have_text('未评估')
+            expect(page.locator('#decision-validity')).to_have_text('有效期：等待真实市场绑定')
             expect(page.locator('#decision-reasons')).to_contain_text('真实市场身份')
             results.append('explicit_current_decision_wait_and_reasons')
             before = page.locator('#source-time').inner_text()
