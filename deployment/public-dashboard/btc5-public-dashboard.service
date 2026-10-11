@@ -1,0 +1,19 @@
+[Unit]
+Description=Public Binance BTC five-minute research dashboard
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/btc5-public-dashboard/releases/77db265
+ExecStart=%h/btc5-public-dashboard/venv/bin/python scripts/start_binance_direction.py --no-browser --port 8767 --binance-model %h/btc5-public-dashboard/model/model.joblib
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=OMP_NUM_THREADS=1
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=MKL_NUM_THREADS=1
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=default.target

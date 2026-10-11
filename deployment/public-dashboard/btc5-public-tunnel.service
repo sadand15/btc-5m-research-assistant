@@ -1,0 +1,13 @@
+[Unit]
+Description=Public HTTPS quick tunnel for Binance research dashboard
+After=network-online.target btc5-public-dashboard.service
+
+[Service]
+ExecStart=%h/btc5-public-dashboard/tools/cloudflared tunnel --no-autoupdate --protocol http2 --url http://127.0.0.1:8767 --http-host-header localhost
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+MemoryMax=256M
+
+[Install]
+WantedBy=default.target
