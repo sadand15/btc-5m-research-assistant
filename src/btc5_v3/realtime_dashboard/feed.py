@@ -58,7 +58,7 @@ def parse_trade(raw, received_at):
         raise FeedError('INVALID_TRADE') from None
 
 
-def parse_candles(raw, interval, start, end, closed_before=None):
+def parse_candles(raw, interval, start, end, closed_before=None, allow_empty=False):
     if not isinstance(raw, list):
         raise FeedError('INVALID_CANDLES')
     result = {}
@@ -70,7 +70,7 @@ def parse_candles(raw, interval, start, end, closed_before=None):
             op, high, low, close = (price(row[i]) for i in range(1, 5))
             if (at % interval or close_at != at+interval-1 or not start <= at < end
                     or not low <= min(op, close) <= max(op, close) <= high
-                    or type(row[8]) is not int or row[8] <= 0):
+                    or type(row[8]) is not int or row[8] < 0 or (row[8] == 0 and not allow_empty)):
                 raise FeedError('INVALID_CANDLES')
             if closed_before is not None and close_at >= closed_before:
                 raise FeedError('UNFINISHED_CANDLE')

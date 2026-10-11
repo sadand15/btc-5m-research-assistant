@@ -46,6 +46,22 @@
     if (requestFailed) status = "DISCONNECTED";
     else if (status !== "DISCONNECTED" && quote && (!Number.isFinite(age) || !Number.isFinite(receiptAge) || age > state.stale_after_ms || receiptAge > state.stale_after_ms)) status = "DELAYED";
     const live = !requestFailed && ["HEALTHY", "RECOVERING"].includes(status) && Number.isFinite(state.live_price) && Number.isFinite(age) && Number.isFinite(receiptAge) && age <= state.stale_after_ms && receiptAge <= state.stale_after_ms;
+    const prediction=state.binance_direction;
+    $("direction-card").hidden=!prediction;
+    if(prediction){
+      const fresh=live && Number.isFinite(prediction.source_at) && at>=prediction.source_at && at-prediction.source_at<=10000 && at<prediction.cycle_end;
+      const tteOk=prediction.cycle_end-at>=30000 && prediction.cycle_end-at<=180000;
+      text("direction-signal",fresh&&tteOk?prediction.signal:"WAIT");
+      text("direction-probability",fresh&&Number.isFinite(prediction.p_up)?`上涨 ${(100*prediction.p_up).toFixed(1)}% · 下跌或持平 ${(100*prediction.p_non_up).toFixed(1)}%`:"暂无有效概率");
+      const explanations={WARMUP:"模型预热中",MODEL_UNAVAILABLE:"尚未加载模型",MODEL_LOAD_FAILED:"模型或运行依赖不可用",MODEL_HASH_MISMATCH:"模型文件校验失败",PUBLIC_FEED_NOT_HEALTHY:"公开行情连接未就绪",OUTSIDE_TRAINED_TIME_SUPPORT:"不在模型训练支持的采样时刻",OUTSIDE_RESEARCH_TTE:"仅在剩余 30–180 秒显示方向信号",PROBABILITY_BELOW_DISPLAY_THRESHOLD:"两侧概率均未达到固定 70% 展示门槛",UP_PROBABILITY_AT_LEAST_70_PERCENT:"模型更倾向本周期上涨",NON_UP_PROBABILITY_AT_LEAST_70_PERCENT:"模型更倾向本周期下跌或持平",CONNECTION_FAILURE:"预测数据连接失败，正在重试",MODEL_INPUT_OR_INFERENCE_FAILURE:"预测输入不完整或推理失败",PREDICTION_STALE_OR_CYCLE_CHANGED:"预测过期或周期已切换"};
+      const reason=!live?"PUBLIC_FEED_NOT_HEALTHY":!fresh?(Number.isFinite(prediction.source_at)?"PREDICTION_STALE_OR_CYCLE_CHANGED":prediction.reason):!tteOk?"OUTSIDE_RESEARCH_TTE":prediction.reason;
+      text("direction-reason",explanations[reason]||reason);
+      text("direction-time",`预测 ${utc(prediction.generated_at)} · 输入 ${utc(prediction.source_at)} · 结束 ${utc(prediction.cycle_end)}`);
+      document.querySelector('.research-card h3').textContent="Binance 目标已绑定";
+      document.querySelector('.research-card p').textContent="当前方向来自冻结 Binance BTCUSDT 五分钟模型；实时可靠性仍需前瞻验证。";
+      document.querySelector('.research-card .tag').textContent="实验预测";
+      document.querySelector('.contract-status').textContent="BINANCE_TARGET_MATCH · EXPERIMENTAL_PREDICTION";
+    }
     text("health-badge", statusNames[status] || "待核验"); $("health-badge").className = `status ${status.toLowerCase()}`;
     text("live-price", live ? money(state.live_price) : "—"); text("age", duration(age));
     text("price-caption", live ? (state.mode === "SYNTHETIC_DEMO" ? "合成样例价格 · 非真实行情" : "当前公开成交报价 · 自动刷新") : "实时价格暂不可用；最近有效报价单独保留，不作为实时价格。");

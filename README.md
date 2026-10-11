@@ -1,5 +1,13 @@
 # BTC 5m Realtime Research Dashboard v1.0
 
+## Binance 现货方向模式
+
+本分支新增 **Binance Spot BTCUSDT 当前 UTC 五分钟周期**的实时冻结模型预测。
+不再因 Predict.fun 的目标差异阻止 Binance 模式。运行 `python scripts/start_binance_direction.py`，打开 `http://127.0.0.1:8767`。
+需要原项目依赖及可信冻结模型；本机已在独立忽略目录准备好。详见 [目标、启动、门槛与限制](docs/BINANCE_DIRECTION.md)。
+显示 `UP / DOWN / WAIT`、上涨概率与非上涨概率；DOWN 明确包含持平，WAIT 是不出方向信号。
+默认公开行情模式及下方原研究记录保持原来的 Predict.fun 未就绪说明。
+
 **可在 Windows 本机打开、自动更新的中文 BTC 行情与研究工作台。**
 
 当前价格、源时间与接收时间、UTC 五分钟倒计时、1 小时／24 小时历史图、

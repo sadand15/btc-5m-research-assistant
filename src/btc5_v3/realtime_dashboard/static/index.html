@@ -12,6 +12,13 @@
   <div id="demo-banner" class="notice demo" hidden>合成演示模式 · SYNTHETIC_DEMO · 以下行情并非真实市场数据</div>
   <section class="page-title"><div><div class="eyebrow">MARKET OBSERVATORY</div><h1>实时研究工作台</h1><p>观察价格与数据质量，保留每一个时间边界。</p></div><div class="utc-clock"><span>当前 UTC 时间</span><strong id="clock">等待连接</strong></div></section>
   <div class="source-notice"><span class="info-icon">i</span><div><strong>价格来源有明确边界</strong><span>本页展示 Binance Spot BTCUSDT 公开行情。它不是 Predict.fun 的 Chainlink 结算参考价，也不能用于推断其最终结果。</span></div><span class="read-only">READ ONLY</span></div>
+  <section class="card" id="direction-card" hidden style="margin-bottom:20px;padding:24px">
+    <div class="card-top"><h2>Binance 本周期方向预测</h2><span class="tag">冻结模型 · 研究信号</span></div>
+    <strong id="direction-signal" style="font-size:48px">WAIT</strong>
+    <p id="direction-probability">等待有效预测</p><p id="direction-reason">模型预热中</p>
+    <p id="direction-time" class="tiny"></p>
+    <p class="definition">目标：当前 UTC 五分钟 K 线收盘价与开盘价比较。UP = 收盘 &gt; 开盘；DOWN = 下跌或持平（冻结二分类负类）。概率不是已验证胜率。WAIT 表示数据、时间或概率门槛不足，不代表平盘。</p>
+  </section>
   <section class="overview-grid">
     <article class="card price-card"><div class="card-top"><h2>比特币 <span class="muted">/ BTCUSDT</span></h2><span class="status" id="health-badge" role="status">连接中</span></div><div class="price-row"><div id="live-price" class="price">—</div><span class="price-unit">USDT</span></div><div id="price-caption" class="price-caption">正在连接公开行情源，不显示未验证价格。</div><div class="metric-pair"><div><span>来源</span><strong id="source">Binance Spot</strong></div><div><span>源数据年龄</span><strong id="age">—</strong></div><div title="接收时间减源时间，含成交间隔，不等同请求往返耗时"><span>源 → 接收间隔</span><strong id="latency">—</strong></div></div><div class="last-known" id="last-known">尚无最近有效报价</div></article>
     <article class="card cycle-card"><div class="card-top"><h2>UTC 五分钟周期</h2><span class="tag">固定时间桶</span></div><div class="cycle-main"><div><span class="small-label">距本周期结束</span><div id="countdown" class="countdown">—:—</div></div><div class="reference"><span class="small-label">周期起点参考价</span><strong id="reference-price">—</strong><span>USDT</span></div></div><div class="progress-track"><div id="cycle-progress"></div></div><div class="cycle-times"><div><span>开始 · UTC</span><strong id="cycle-start">—</strong></div><div><span>结束 · UTC</span><strong id="cycle-end">—</strong></div></div><p class="definition">参考定义：Binance Spot BTCUSDT 的 UTC 五分钟 K 线开盘价，即该桶的第一笔成交价。非 Chainlink 参考价。</p><div id="reference-time" class="tiny">等待本周期参考价</div></article>

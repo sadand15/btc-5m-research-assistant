@@ -88,17 +88,25 @@ def main(root):
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--demo', action='store_true', help='Explicit offline synthetic UI demo')
+    parser.add_argument('--binance-model', type=Path, help='Trusted frozen model; Binance direction research only')
     args = parser.parse_args()
     if not 1024 <= args.port <= 65535:
         parser.error('port must be between 1024 and 65535')
-    service = DashboardService(SyntheticFeed() if args.demo else PublicFeed())
+    feed = SyntheticFeed() if args.demo else PublicFeed()
+    direction = None
+    if args.binance_model:
+        if args.demo:
+            parser.error('live model cannot be combined with synthetic UI demo')
+        from .direction import BinanceDirection
+        direction = BinanceDirection(feed, args.binance_model)
+    service = DashboardService(feed, direction=direction)
     try:
         server = make_server(service, root, args.port)
     except OSError:
         parser.exit(1, 'Port unavailable. Close the previous Dashboard or choose --port 8766.\n')
     url = f'http://127.0.0.1:{args.port}'
     print(f'BTC 5m Realtime Research Dashboard v1.0\n{url}\nMode: {service.feed.mode}\n'
-          'REAL_DATA_NOT_READY / TARGET_MISMATCH\nPress Ctrl+C to stop.', flush=True)
+          f'{"BINANCE_DIRECTION_RESEARCH" if direction else "REAL_DATA_NOT_READY / TARGET_MISMATCH"}\nPress Ctrl+C to stop.', flush=True)
     service.start()
     if not args.no_browser:
         timer = threading.Timer(0.7, lambda: webbrowser.open(url))

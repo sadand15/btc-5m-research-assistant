@@ -14,7 +14,8 @@ def backoff(failures, minimum=5):
 
 
 class DashboardService:
-    def __init__(self, feed, clock=time.time, monotonic=time.monotonic):
+    def __init__(self, feed, clock=time.time, monotonic=time.monotonic, direction=None):
+        self.direction = direction
         self.feed, self.clock, self.monotonic = feed, clock, monotonic
         self.lock = threading.RLock()
         self.stop_event = threading.Event()
@@ -114,7 +115,11 @@ class DashboardService:
                 error = error or 'HISTORY_STALE'
             hist_status = ('ERROR' if error else 'LOADING' if self.history_at is None
                            else 'READY' if len(points) == 1440 else 'PARTIAL')
+            direction = self.direction.snapshot() if self.direction else None
+            if direction and self.health['status'] not in ('HEALTHY', 'RECOVERING'):
+                direction = dict(direction, signal='WAIT', reason='PUBLIC_FEED_NOT_HEALTHY', p_up=None, p_non_up=None)
             return dict(version='1.0', server_at=now, source='Binance Spot', symbol='BTCUSDT',
+                binance_direction=direction,
                 mode=self.feed.mode, health=deepcopy(self.health), quote=q,
                 live_price=q['price'] if q and self.health['status'] in ('HEALTHY', 'RECOVERING') else None,
                 stale_after_ms=STALE_MS,
@@ -157,6 +162,10 @@ class DashboardService:
             return
         for task, base in ((self.poll_quote, 5), (self.poll_history, 60), (self.poll_reference, 5)):
             thread = threading.Thread(target=self._loop, args=(task, base), daemon=True)
+            thread.start()
+            self.threads.append(thread)
+        if self.direction:
+            thread = threading.Thread(target=self._loop, args=(self.direction.poll, 5), daemon=True)
             thread.start()
             self.threads.append(thread)
 
