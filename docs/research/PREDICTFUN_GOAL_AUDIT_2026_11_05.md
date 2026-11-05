@@ -73,3 +73,43 @@ Predict forwarder 要求两个报告时间戳相同，CRE 路径允许最多五�
 完整本地测试：**1221 passed, 2 skipped**；评估器回归 43 项全部通过。
 95 个受保护文件 SHA256 一致；main 和 v2.0.0-frozen 引用未变；暂存凭证扫描零发现。
 本轮完成的是评估契约修复与缺口审计，不是当前市场预测能力交付。
+
+## 公开链上证据可达性复核
+
+用户再次确认没有参考价/权威结果配对档案或独立验证预测服务。
+本次未读取凭证、账户或旧 observation；仅执行一次公开节点
+`eth_getTransactionReceipt`，没有发送交易、启动 collector 或创建 study。
+
+从公开浏览器索引发现的候选交易：
+[0xac2eecef…131d4d2](https://bscscan.com/tx/0xac2eecefd4342b33b52557fd4c796c97893266e75d535aae09b851871131d4d2)。
+浏览器全文访问失败，随后使用公开 BNB Chain 节点
+`https://bsc-dataseed.bnbchain.org/` 只读核验回执：
+
+- transaction hash：`0xac2eecefd4342b33b52557fd4c796c97893266e75d535aae09b851871131d4d2`
+- block number：`0x61bfba3`
+- block hash：`0x48801b75e194a46ed16cca37923c5306e153c35c31c35950b4b376aedbd53861`
+- receipt status：`0x1`；相关日志 `removed=false`。
+- 日志 `0x45` 来自 `0x22da1810b194ca018378464a58f6ac2b10c9d244`，
+  topic0 为 `0xb44d84d3289691f71497564b85d4233648d9dbae8cbdbb4329f301c3a0185894`，
+  condition ID 为 `0x324f719fe5e62e8adef30023616634e51afe81a0d14976a5674b9ddc82488ea0`。
+- 同一回执还含候选 adapter `0x77620fab2969df2d5696f1f081940e416cf17ca5`
+  的日志和 feed ID `0x0003ef42b4d20a19409a187c39670a6f5be7ce17fc78c290d25eb45bbf769d37`。
+
+这些仅证明候选历史回执可以公开读取。事件语义仍需通过部署 ABI 核验；
+不能由日志相邻关系推定同一轮次绑定，不能把 feed ID 直接标注为 BTC，
+不能把 topic 中的整数 `0x12c` 自动解释为已证明的五分钟周期。
+本次没有证明该地址属于当前 Predict.fun BTC5m 部署，也没有完成 market/token/
+condition/round/feed 的关联。回执成功及 `removed=false` 不等于已独立验证链最终性；
+区块时间不等于原生 `settled_at`、报告源时间或历史研究系统的接收时间。
+
+公开链路径因此从“尚未验证可达”推进为“候选回执可达”，**仍非合格数据集**。
+下一步需固定官方部署来源和 ABI、核验 feed 语义及精确轮次/市场映射，再评估
+是否存在足够的周期内参考价覆盖、可用时间和合法研究使用条件。
+即便获得轮次端点与 payout，也不能替代周期内历史特征或独立模型验证。
+当前真实决策保持 `NOT_EVALUATED`，数据准备状态保持 `NOT_READY`。
+
+提交 `8f3eb936e0cbe79440a979984a7ad999a7661ce9` 的远程 CI 本次实查全部成功：
+[Tests](https://github.com/sadand15/btc-5m-research-assistant/actions/runs/42050965367)、
+[M10.2 Offline Reproduction](https://github.com/sadand15/btc-5m-research-assistant/actions/runs/42050965289)、
+[Realtime Dashboard](https://github.com/sadand15/btc-5m-research-assistant/actions/runs/42050965336)。
+本节仅补充审计记录，没有修改运行代码；以上 CI 对应前述代码提交。
