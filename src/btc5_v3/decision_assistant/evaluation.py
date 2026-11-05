@@ -6,7 +6,7 @@ no network, clock, file, account, or order access.  Missing evidence is a
 visible ``WAIT`` and is never filled with defaults.
 """
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import Decimal, localcontext
 from typing import FrozenSet
 
 D = Decimal
@@ -29,6 +29,8 @@ class DecisionPolicy:
     min_depth: D
     min_tte_ms: int
     max_tte_ms: int
+    max_quote_age_ms: int = 5000
+    max_prediction_age_ms: int = 15000
 
     def __post_init__(self):
         if not finite(self.min_edge) or self.min_edge < ZERO:
@@ -37,10 +39,12 @@ class DecisionPolicy:
             raise ValueError("invalid max_spread")
         if not nonnegative(self.min_depth):
             raise ValueError("invalid min_depth")
-        if not isinstance(self.min_tte_ms, int) or not isinstance(self.max_tte_ms, int):
+        if type(self.min_tte_ms) is not int or type(self.max_tte_ms) is not int:
             raise ValueError("invalid TTE")
         if self.min_tte_ms < 0 or self.max_tte_ms < self.min_tte_ms:
             raise ValueError("invalid TTE range")
+        if any(type(x) is not int or x <= 0 for x in (self.max_quote_age_ms, self.max_prediction_age_ms)):
+            raise ValueError("invalid freshness limits")
 
 
 @dataclass(frozen=True)
@@ -73,6 +77,15 @@ class DecisionInput:
     fee_per_share: D | None
     slippage_per_share: D | None
     origin: str
+    prediction_market_id: str | None = None
+    prediction_target_contract_hash: str | None = None
+    prediction_rule_hash: str | None = None
+    quote_market_id: str | None = None
+    quote_rule_hash: str | None = None
+    quote_token_mapping: str | None = None
+    quote_source_at: int | None = None
+    quote_received_at: int | None = None
+    quote_available_at: int | None = None
 
 
 @dataclass(frozen=True)
@@ -87,6 +100,7 @@ class Decision:
     origin: str
     market_id: str | None
     generated_at: int | None
+    valid_until: int | None = None
 
 
 def _valid_id(value):
@@ -97,7 +111,15 @@ def evaluate(item: DecisionInput, policy: DecisionPolicy) -> Decision:
     """Return ``WAIT`` with ``NOT_EVALUATED`` unless every binding is verified."""
     if not isinstance(item, DecisionInput) or not isinstance(policy, DecisionPolicy):
         raise TypeError("explicit decision contracts required")
+    with localcontext() as context:
+        context.prec = 80
+        return _evaluate(item, policy)
+
+
+def _evaluate(item, policy):
     reasons = []
+    gate_reasons = []
+    valid_until = None
     p = (item.p_up, item.p_down, item.p_tie)
     if not all(finite(x) and ZERO <= x <= ONE for x in p) or sum(p, ZERO) != ONE:
         reasons.append("INVALID_THREE_CLASS_PROBABILITY")
@@ -105,7 +127,8 @@ def evaluate(item: DecisionInput, policy: DecisionPolicy) -> Decision:
         reasons.append("UNKNOWN_ORIGIN")
     if item.origin == "REAL_VERIFIED" and not item.approval_digest:
         reasons.append("MISSING_APPROVAL_DIGEST")
-    if item.approval_digest not in item.approved_digests:
+    if (not _valid_id(item.approval_digest) or not isinstance(item.approved_digests, frozenset)
+            or item.approval_digest not in item.approved_digests):
         reasons.append("PREDICTION_APPROVAL_NOT_VERIFIED")
     for name, value in (("market_id", item.market_id), ("market_rule_hash", item.market_rule_hash),
                         ("token_mapping", item.token_mapping), ("target_contract_hash", item.target_contract_hash)):
@@ -113,24 +136,53 @@ def evaluate(item: DecisionInput, policy: DecisionPolicy) -> Decision:
             reasons.append("MISSING_" + name.upper())
     if item.token_mapping not in {"YES_UP_NO_DOWN_HALF_TIE", "YES_UP_NO_DOWN_STRICT"}:
         reasons.append("AMBIGUOUS_TOKEN_MAPPING")
+    if item.token_mapping == "YES_UP_NO_DOWN_STRICT" and finite(item.p_tie) and item.p_tie != ZERO:
+        reasons.append("TIE_PAYOUT_UNSPECIFIED")
+    for name, expected, actual in (
+        ('PREDICTION_MARKET', item.market_id, item.prediction_market_id),
+        ('PREDICTION_TARGET', item.target_contract_hash, item.prediction_target_contract_hash),
+        ('PREDICTION_RULE', item.market_rule_hash, item.prediction_rule_hash),
+        ('QUOTE_MARKET', item.market_id, item.quote_market_id),
+        ('QUOTE_RULE', item.market_rule_hash, item.quote_rule_hash),
+        ('QUOTE_TOKEN_MAPPING', item.token_mapping, item.quote_token_mapping),
+    ):
+        if not _valid_id(actual) or actual != expected:
+            reasons.append(name + '_BINDING_MISMATCH')
     times = (item.market_start, item.market_end, item.source_at, item.received_at,
-             item.available_at, item.prediction_generated_at, item.prediction_expires_at)
-    if not all(isinstance(x, int) and x >= 0 for x in times):
+             item.available_at, item.prediction_generated_at, item.prediction_expires_at,
+             item.quote_source_at, item.quote_received_at, item.quote_available_at, item.as_of)
+    if not all(type(x) is int and x >= 0 for x in times):
         reasons.append("MISSING_TIME_BINDING")
         tte = None
     else:
         tte = item.market_end - item.as_of
-        if not item.market_start < item.market_end or item.market_end - item.market_start != 300_000:
+        if (not item.market_start < item.market_end or item.market_end - item.market_start != 300_000
+                or item.market_start % 300_000 != 0):
             reasons.append("NOT_UTC_5M_MARKET")
         if not (item.source_at <= item.received_at <= item.available_at <= item.prediction_generated_at <= item.as_of):
             reasons.append("NONCAUSAL_PREDICTION_TIME")
-        if item.as_of > item.prediction_expires_at:
+        if not item.market_start <= item.prediction_generated_at < item.prediction_expires_at <= item.market_end:
+            reasons.append("INVALID_PREDICTION_WINDOW")
+        if item.as_of >= item.prediction_expires_at:
             reasons.append("PREDICTION_EXPIRED")
+        if item.as_of - item.prediction_generated_at >= policy.max_prediction_age_ms:
+            reasons.append("PREDICTION_STALE")
+        if not item.market_start <= item.quote_source_at <= item.quote_received_at <= item.quote_available_at <= item.as_of:
+            reasons.append("NONCAUSAL_QUOTE_TIME")
+        if (item.as_of - item.quote_source_at >= policy.max_quote_age_ms
+                or item.as_of - item.quote_received_at >= policy.max_quote_age_ms):
+            reasons.append("QUOTE_STALE")
+        if not item.market_start <= item.as_of < item.market_end:
+            reasons.append("MARKET_NOT_CURRENT")
         if not policy.min_tte_ms <= tte <= policy.max_tte_ms:
-            reasons.append("TTE_OUT_OF_RANGE")
-    if not item.calibration_verified:
+            gate_reasons.append("TTE_OUT_OF_RANGE")
+        valid_until = min(item.prediction_expires_at, item.prediction_generated_at + policy.max_prediction_age_ms,
+                          item.quote_source_at + policy.max_quote_age_ms,
+                          item.quote_received_at + policy.max_quote_age_ms, item.market_end,
+                          item.market_end - policy.min_tte_ms + 1)
+    if item.calibration_verified is not True:
         reasons.append("CALIBRATION_NOT_VERIFIED")
-    if not item.quality_verified:
+    if item.quality_verified is not True:
         reasons.append("DATA_QUALITY_NOT_VERIFIED")
     for name, value in (("fee_per_share", item.fee_per_share), ("slippage_per_share", item.slippage_per_share)):
         if not nonnegative(value):
@@ -141,16 +193,24 @@ def evaluate(item: DecisionInput, policy: DecisionPolicy) -> Decision:
     spreads = ((item.yes_ask - item.yes_bid) if not "INVALID_MARKET_QUOTE" in reasons else None,
                (item.no_ask - item.no_bid) if not "INVALID_MARKET_QUOTE" in reasons else None)
     if spreads[0] is not None and (spreads[0] > policy.max_spread or spreads[1] > policy.max_spread):
-        reasons.append("SPREAD_TOO_WIDE")
-    if not nonnegative(item.yes_depth) or not nonnegative(item.no_depth) or item.yes_depth < policy.min_depth or item.no_depth < policy.min_depth:
-        reasons.append("LIQUIDITY_TOO_LOW")
-    cost = item.fee_per_share + item.slippage_per_share if nonnegative(item.fee_per_share) and nonnegative(item.slippage_per_share) else None
-    up_edge = item.p_up - item.yes_ask - cost if cost is not None and finite(item.p_up) and finite(item.yes_ask) else None
-    down_edge = item.p_down - item.no_ask - cost if cost is not None and finite(item.p_down) and finite(item.no_ask) else None
-    if up_edge is None or down_edge is None or max(up_edge, down_edge) < policy.min_edge:
-        reasons.append("EDGE_TOO_SMALL_OR_UNAVAILABLE")
-    elif up_edge == down_edge:
-        reasons.append("AMBIGUOUS_DIRECTION")
+        gate_reasons.append("SPREAD_TOO_WIDE")
+    if not nonnegative(item.yes_depth) or not nonnegative(item.no_depth):
+        reasons.append("INVALID_LIQUIDITY")
+    elif item.yes_depth < policy.min_depth or item.no_depth < policy.min_depth:
+        gate_reasons.append("LIQUIDITY_TOO_LOW")
     if reasons:
-        return Decision("WAIT", "NOT_EVALUATED", tuple(dict.fromkeys(reasons)), p, up_edge, down_edge, tte, item.origin, item.market_id, item.prediction_generated_at)
-    return Decision("UP" if up_edge > down_edge else "DOWN", "EVALUATED", (), p, up_edge, down_edge, tte, item.origin, item.market_id, item.prediction_generated_at)
+        return Decision("WAIT", "NOT_EVALUATED", tuple(dict.fromkeys(reasons + gate_reasons)), p,
+                        None, None, tte, item.origin, item.market_id, item.as_of, None)
+    cost = item.fee_per_share + item.slippage_per_share if nonnegative(item.fee_per_share) and nonnegative(item.slippage_per_share) else None
+    tie_payout = item.p_tie / 2 if item.token_mapping == "YES_UP_NO_DOWN_HALF_TIE" else ZERO
+    up_edge = item.p_up + tie_payout - item.yes_ask - cost
+    down_edge = item.p_down + tie_payout - item.no_ask - cost
+    if up_edge is None or down_edge is None or max(up_edge, down_edge) < policy.min_edge:
+        gate_reasons.append("EDGE_TOO_SMALL_OR_UNAVAILABLE")
+    elif up_edge == down_edge:
+        gate_reasons.append("AMBIGUOUS_DIRECTION")
+    if gate_reasons:
+        return Decision("WAIT", "EVALUATED", tuple(dict.fromkeys(gate_reasons)), p, up_edge, down_edge,
+                        tte, item.origin, item.market_id, item.as_of, min(valid_until, item.as_of + 1))
+    return Decision("UP" if up_edge > down_edge else "DOWN", "EVALUATED", (), p, up_edge, down_edge,
+                    tte, item.origin, item.market_id, item.as_of, valid_until)
